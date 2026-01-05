@@ -13,7 +13,8 @@ import {
     resetPassword,
     refreshAccessToken,
     logout,
-    getProfile
+    getProfile,
+    googleLogin
 } from '../controllers/authController.js';
 
 const router = express.Router();
@@ -45,6 +46,8 @@ router.get("/refresh-token", refreshAccessToken);
 router.get("/profile", authenticateUser, getProfile);
 
 router.post('/logout', logout);
+
+router.post("/google", googleLogin);
 
 router.post('/send-otp', async (req, res) => {
   const { email } = req.body;
@@ -82,4 +85,5 @@ router.post('/verify-otp', async (req, res) => {
   // Optional: mark email as verified via temp memory or token (skipped for now)
   res.status(200).json({ message: 'OTP verified' });
 });
+
 export default router;

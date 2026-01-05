@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AuthAPI } from "../api/auth";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function Signup() {
   const [step, setStep] = useState(1);
@@ -43,6 +44,7 @@ export default function Signup() {
   };
 
   return (
+    <div>
     <div>
       <h2>Signup</h2>
 
@@ -96,6 +98,9 @@ export default function Signup() {
       )}
 
       {step === 3 && <p>Account created successfully.</p>}
+    </div>
+    <span>OR</span>
+    <GoogleLoginButton/>
     </div>
   );
 }

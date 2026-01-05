@@ -10,6 +10,13 @@ export const AuthAPI = {
     return res.data;
   },
 
+  // Google OAuth login
+googleLogin: async (credential) => {
+  const res = await api.post("/auth/google", { credential });
+  return res.data;
+},
+
+
   // Signup (after OTP verification)
   signup: async (name, email, password, otp) => {
     const res = await api.post("/auth/signup", {

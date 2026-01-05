@@ -4,7 +4,7 @@ import User from "../models/userModel.js";
 import { sendOTPEmail } from "../utils/nodeMailer.js";
 import { generateTokens } from "../utils/tokenUtils.js";
 import Otp from '../models/otpModel.js';
-
+import { OAuth2Client } from "google-auth-library";
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -270,6 +270,70 @@ const getProfile = async (req, res) => {
   }
 };
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body; // Google ID token
+
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, sub, email_verified } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // 🔗 Link Google if not already linked
+      if (!user.authProviders?.google?.googleId) {
+        user.authProviders.google = {
+          googleId: sub,
+          emailVerified: email_verified,
+        };
+        user.isAccountVerified ||= email_verified;
+        await user.save();
+      }
+    } else {
+      // 🆕 Create Google-only user
+      user = await User.create({
+        name,
+        email,
+        authProviders: {
+          local: false,
+          google: {
+            googleId: sub,
+            emailVerified: email_verified,
+          },
+        },
+        isAccountVerified: email_verified,
+      });
+    }
+
+    const { accessToken, refreshToken } = generateTokens(
+      user._id,
+      user.email
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 3 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      message: "Google login successful",
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Google OAuth error:", error);
+    res.status(401).json({ message: "Invalid Google token" });
+  }
+};
+
 export {
     signup,
     login,
@@ -280,5 +344,6 @@ export {
     verifyResetOTP,
     resetPassword,
     refreshAccessToken,
-    getProfile
+    getProfile,
+    googleLogin
 };

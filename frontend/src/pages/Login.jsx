@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AuthAPI } from "../api/auth";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -21,6 +22,7 @@ export default function Login() {
   };
 
   return (
+    <div>
     <form onSubmit={handleLogin}>
       <h2>Login</h2>
 
@@ -44,5 +46,8 @@ export default function Login() {
         {loading ? "Logging in..." : "Login"}
       </button>
     </form>
+    <span>OR</span>
+    <GoogleLoginButton/>
+    </div>
   );
 }
