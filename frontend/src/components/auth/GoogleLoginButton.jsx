@@ -1,5 +1,5 @@
 import { GoogleLogin } from "@react-oauth/google";
-import { AuthAPI } from "../api/auth";
+import { AuthAPI } from "../../api/auth";
 
 const GoogleLoginButton = () => {
   const handleSuccess = async ({ credential }) => {

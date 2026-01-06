@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AuthAPI } from "../api/auth";
-import Logout from "../components/Logout";
+import Logout from "../components/auth/Logout";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
