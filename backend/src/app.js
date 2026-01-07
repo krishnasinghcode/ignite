@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import authRoutes from "./routes/authRoutes.js";
+import problemRoutes from "./routes/problemRoutes.js";
+import solutionRoutes from "./routes/solutionRoutes.js";
 const app = express();
 
 app.use(express.json());
@@ -15,6 +17,8 @@ app.use(cors({
 }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/problems', problemRoutes);
+app.use('/api/solutions', solutionRoutes);
 
 
 export default app;
