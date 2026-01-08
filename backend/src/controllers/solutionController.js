@@ -95,3 +95,25 @@ export async function toggleSolutionVisibility(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Get a single public solution by ID
+ */
+export async function getSolutionById(req, res, next) {
+  try {
+    const solution = await Solution.findOne({
+      _id: req.params.solutionId,
+      isPublic: true
+    })
+      .populate("userId", "name")
+      .populate("problemId", "title slug");
+
+    if (!solution) {
+      return res.status(404).json({ message: "Solution not found" });
+    }
+
+    res.json(solution);
+  } catch (err) {
+    next(err);
+  }
+}
