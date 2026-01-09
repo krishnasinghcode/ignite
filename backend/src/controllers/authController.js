@@ -48,34 +48,44 @@ const signup = async (req, res) => {
 
 // Login Controller
 const login = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const existingUser = await User.findOne({ email });
+  const { email, password } = req.body;
 
-        if (!existingUser) {
-            return res.status(400).json({ message: "User does not exist, please signup!" });
-        }
+  try {
+    const existingUser = await User.findOne({ email });
 
-        const isMatch = await bcrypt.compare(String(password), existingUser.password);
-
-        if (!isMatch) {
-            return res.status(400).json({ message: "Wrong password!" });
-        }
-
-        const { accessToken, refreshToken } = generateTokens(existingUser._id, existingUser.email);
-
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
-            maxAge: 3 * 24 * 60 * 60 * 1000
-        });
-
-        res.status(200).json({ message: "Login successful!", accessToken });
-    } catch (error) {
-        console.error("Login Error:", error);
-        res.status(500).json({ message: "Login unsuccessful!" });
+    if (!existingUser) {
+      return res.status(400).json({ message: "User does not exist, please signup!" });
     }
+
+    const isMatch = await bcrypt.compare(String(password), existingUser.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Wrong password!" });
+    }
+
+    const { accessToken, refreshToken } = generateTokens(existingUser._id, existingUser.email);
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax", 
+      maxAge: 3 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      message: "Login successful!",
+      accessToken,
+      user: {
+        _id: existingUser._id,
+        name: existingUser.name,
+        email: existingUser.email,
+        isAccountVerified: existingUser.isAccountVerified,
+      },
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
+    res.status(500).json({ message: "Login unsuccessful!" });
+  }
 };
 
 // Logout Controller

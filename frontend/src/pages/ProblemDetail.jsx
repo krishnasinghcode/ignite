@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import { ProblemAPI } from "@/api/problems";
 import { SolutionAPI } from "@/api/solutions";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
 export default function ProblemDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -15,11 +19,8 @@ export default function ProblemDetail() {
     const fetchProblemAndSolutions = async () => {
       setLoading(true);
       try {
-        // Fetch the problem by slug
         const resProblem = await ProblemAPI.getProblemBySlug(slug);
         setProblem(resProblem);
-
-        // Fetch public solutions for this problem
         const resSolutions = await SolutionAPI.getSolutionsByProblem(resProblem._id);
         setSolutions(resSolutions);
       } catch (err) {
@@ -32,69 +33,69 @@ export default function ProblemDetail() {
     fetchProblemAndSolutions();
   }, [slug]);
 
-  if (loading) return <p>Loading...</p>;
-  if (!problem) return <p>Problem not found</p>;
+  if (loading) return <p className="text-center text-sm text-muted-foreground">Loading...</p>;
+  if (!problem) return <p className="text-center text-sm text-muted-foreground">Problem not found</p>;
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
       {/* Problem Details */}
-      <h1 className="text-2xl font-bold mb-2">{problem.title}</h1>
-      <p className="mb-2">{problem.summary}</p>
-      <p className="mb-4">{problem.description}</p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold line-clamp-2">{problem.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">{problem.summary}</p>
+          <p className="text-base whitespace-pre-line">{problem.description}</p>
 
-      <div className="flex gap-2 mb-4">
-        <span className="badge">{problem.domain}</span>
-        <span className="badge">{problem.difficulty}</span>
-        {problem.tags.map(tag => (
-          <span key={tag} className="badge badge-secondary">{tag}</span>
-        ))}
-      </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline">{problem.domain}</Badge>
+            <Badge variant="secondary">{problem.difficulty}</Badge>
+            {problem.tags.map(tag => (
+              <Badge key={tag} variant="outline">{tag}</Badge>
+            ))}
+          </div>
 
-      {/* Submit Solution CTA */}
-      <button
-        onClick={() => navigate(`/problems/${slug}/submit`)}
-        className="bg-blue-600 text-white px-4 py-2 rounded mb-6 hover:bg-blue-700"
-      >
-        Submit Your Solution
-      </button>
+          <Button onClick={() => navigate(`/problems/${slug}/submit`)} className="w-full mt-4">
+            Submit Your Solution
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Public Solutions */}
-      <h2 className="text-xl font-semibold mb-2">Community Solutions</h2>
-      {solutions.length === 0 ? (
-        <p>No solutions yet. Be the first to submit!</p>
-      ) : (
-        <ul>
-          {solutions.map(sol => (
-            <li key={sol._id} className="border p-3 mb-3 rounded">
-              <p className="font-semibold">{sol.userId.name}</p>
-              {sol.techStack.length > 0 && (
-                <p className="text-sm text-gray-600">Tech Stack: {sol.techStack.join(", ")}</p>
-              )}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Community Solutions</h2>
+        {solutions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No solutions yet. Be the first to submit!</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {solutions.map(sol => (
+              <Card key={sol._id} className="hover:shadow-md transition">
+                <CardHeader>
+                  <CardTitle className="text-base">{sol.userId.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {sol.techStack.length > 0 && (
+                    <p className="text-sm text-muted-foreground">Tech Stack: {sol.techStack.join(", ")}</p>
+                  )}
 
-              {/* Simplest fix: render writeup as JSON string */}
-              <p className="mt-2">{JSON.stringify(sol.writeup)}</p>
-              <div className="flex">
-                {sol.repositoryUrl && (
-                  <a
-                    href={sol.repositoryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 underline mt-2 block"
-                  >
-                    View Repository
-                  </a>
-                )}
-                <button
-                  onClick={() => navigate(`/solutions/${sol._id}`)}
-                  className="text-blue-600 underline mt-2"
-                >
-                  View Full Solution →
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <p className="text-sm text-gray-700 line-clamp-4">{JSON.stringify(sol.writeup)}</p>
+
+                  <div className="flex flex-col gap-2 mt-2">
+                    {sol.repositoryUrl && (
+                      <a href={sol.repositoryUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                        View Repository
+                      </a>
+                    )}
+                    <Button variant="link" onClick={() => navigate(`/solutions/${sol._id}`)}>
+                      View Full Solution →
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

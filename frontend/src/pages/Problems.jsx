@@ -1,6 +1,18 @@
-import { useState, useEffect } from "react";
-import { ProblemAPI } from "@/api/problems";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ProblemAPI } from "@/api/problems";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 export default function Problems() {
   const [problems, setProblems] = useState([]);
@@ -23,57 +35,89 @@ export default function Problems() {
     fetchProblems();
   }, [params]);
 
-  if (loading) return <p>Loading...</p>;
-
   return (
-    <div>
-      <div className="filters flex gap-2 mb-4">
-        <select onChange={(e) => setParams({ ...params, domain: e.target.value })}>
-          <option value="">All Domains</option>
-          <option value="Web">Web</option>
-          <option value="Backend">Backend</option>
-          <option value="AI">AI</option>
-          <option value="Systems">Systems</option>
-        </select>
+    <div className="space-y-6">
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Select onValueChange={(value) => setParams({ ...params, domain: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Domains" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Web">Web</SelectItem>
+                <SelectItem value="Backend">Backend</SelectItem>
+                <SelectItem value="AI">AI</SelectItem>
+                <SelectItem value="Systems">Systems</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <select onChange={(e) => setParams({ ...params, difficulty: e.target.value })}>
-          <option value="">All Difficulties</option>
-          <option value="Easy">Easy</option>
-          <option value="Medium">Medium</option>
-          <option value="Hard">Hard</option>
-        </select>
+            <Select onValueChange={(value) => setParams({ ...params, difficulty: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Difficulties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Easy">Easy</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Hard">Hard</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <input
-          type="text"
-          placeholder="Tags comma-separated"
-          onChange={(e) => setParams({ ...params, tags: e.target.value })}
-        />
-      </div>
+            <Input
+              placeholder="Tags (comma separated)"
+              onChange={(e) => setParams({ ...params, tags: e.target.value })}
+            />
 
+            <Button variant="secondary" onClick={() => setParams({})}>
+              Reset Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Content */}
       {loading ? (
-        <p>Loading...</p>
+        <div className="text-center text-sm text-muted-foreground">Loading problems…</div>
       ) : problems.length === 0 ? (
-        <p>No problems found</p>
+        <div className="text-center text-sm text-muted-foreground">No problems found</div>
       ) : (
-        <ul>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {problems.map((problem) => (
-            <li key={problem._id} className="border p-3 mb-2 rounded">
-              <h3 className="font-bold">
-                <Link to={`/problems/${problem.slug}`} className="hover:underline">
-                  {problem.title}
-                </Link>
-              </h3>
-              <p>{problem.summary}</p>
-              <div className="flex gap-2 mt-1">
-                <span className="badge">{problem.domain}</span>
-                <span className="badge">{problem.difficulty}</span>
-                {problem.tags.map((tag) => (
-                  <span key={tag} className="badge badge-secondary">{tag}</span>
-                ))}
-              </div>
-            </li>
+            <Card key={problem._id} className="hover:shadow-md transition">
+              <CardHeader>
+                <CardTitle className="line-clamp-2 text-base">
+                  <Link
+                    to={`/problems/${problem.slug}`}
+                    className="hover:underline"
+                  >
+                    {problem.title}
+                  </Link>
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {problem.summary}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">{problem.domain}</Badge>
+                  <Badge variant="secondary">{problem.difficulty}</Badge>
+                  {problem.tags.map((tag) => (
+                    <Badge key={tag} variant="outline">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+
+                <Button asChild size="sm" className="w-full">
+                  <Link to={`/problems/${problem.slug}`}>View Problem</Link>
+                </Button>
+              </CardContent>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
