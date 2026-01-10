@@ -35,8 +35,8 @@ const signup = async (req, res) => {
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
-            maxAge: 3 * 24 * 60 * 60 * 1000
+            sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+            maxAge: Number(process.env.REFRESH_COOKIE_MAX_AGE),
         });
         await Otp.deleteMany({ email });
         res.status(200).json({ message: "Signup successful!", accessToken });
@@ -69,7 +69,7 @@ const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax", 
-      maxAge: 3 * 24 * 60 * 60 * 1000,
+      maxAge: Number(process.env.REFRESH_COOKIE_MAX_AGE),
     });
 
     res.status(200).json({
