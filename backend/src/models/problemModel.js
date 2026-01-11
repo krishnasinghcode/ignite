@@ -79,6 +79,11 @@ const ProblemSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
+    },
+
+    deletedAt: {
+      type: Date,
+      index: true
     }
   },
   { timestamps: true }

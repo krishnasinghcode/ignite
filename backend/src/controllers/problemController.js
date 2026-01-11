@@ -97,3 +97,58 @@ export async function publishProblem(req, res, next) {
     next(err);
   }
 }
+
+export async function updateProblem(req, res, next) {
+  try {
+    const problem = await Problem.findById(req.params.id);
+
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    if (problem.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    // Restrict edits after publish
+    const restrictedFields = ["domain", "difficulty"];
+    if (problem.status === "published") {
+      restrictedFields.forEach(field => delete req.body[field]);
+    }
+
+    // Regenerate slug if title changes
+    if (req.body.title && req.body.title !== problem.title) {
+      problem.slug = await generateUniqueSlug(req.body.title);
+    }
+
+    Object.assign(problem, req.body);
+    await problem.save();
+
+    res.json(problem);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteProblem(req, res, next) {
+  try {
+    const problem = await Problem.findById(req.params.id);
+
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    if (problem.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    problem.deletedAt = new Date();
+    problem.status = "draft";
+    await problem.save();
+
+    res.json({ message: "Problem deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
+

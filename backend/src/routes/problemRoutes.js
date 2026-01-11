@@ -1,9 +1,11 @@
 import express from "express";
 import {
   createProblem,
+  deleteProblem,
   getAllProblems,
   getProblemBySlug,
-  publishProblem
+  publishProblem,
+  updateProblem
 } from "../controllers/problemController.js";
 import {authenticateUser} from "../middlewares/authMiddleware.js";
 
@@ -16,6 +18,7 @@ router.get("/:slug", getProblemBySlug);
 // Protected (admin/system for now)
 router.post("/", authenticateUser, createProblem);
 router.patch("/:id/publish",authenticateUser,publishProblem);
-
+router.put("/:id",authenticateUser,updateProblem);
+router.delete("/:id",authenticateUser,deleteProblem);
 
 export default router;

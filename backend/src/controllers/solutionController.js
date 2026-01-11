@@ -117,3 +117,54 @@ export async function getSolutionById(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Update a single solution by ID
+ */
+export async function updateSolution(req, res, next) {
+  try {
+    const solution = await Solution.findById(req.params.solutionId);
+    
+    if (!solution) {
+      return res.status(404).json({ message: "Solution not found" });
+    }
+    
+    if (solution.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    
+    if (solution.status === "reviewed") {
+      delete req.body.repositoryUrl;
+      delete req.body.techStack;
+    }
+    
+    Object.assign(solution, req.body);
+    await solution.save();
+    
+    res.json(solution);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Delete a single solution by ID
+ */
+export async function deleteSolution(req, res, next) {
+  try {
+    const solution = await Solution.findById(req.params.solutionId);
+
+    if (!solution) {
+      return res.status(404).json({ message: "Solution not found" });
+    }
+
+    if (solution.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    await solution.deleteOne();
+    res.json({ message: "Solution deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
