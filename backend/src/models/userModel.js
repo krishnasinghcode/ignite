@@ -3,9 +3,20 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
 
-  email: { type: String, required: true, unique: true },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
 
-  password: { type: String },
+  password: {
+    type: String,
+    required: function () {
+      return this.authProviders?.local === true;
+    }
+  },
 
   authProviders: {
     local: { type: Boolean, default: false },
@@ -13,6 +24,13 @@ const userSchema = new mongoose.Schema({
       googleId: { type: String },
       emailVerified: { type: Boolean, default: false }
     }
+  },
+  
+  role: {
+    type: String,
+    enum: ["USER", "ADMIN"],
+    default: "USER",
+    required: true
   },
 
   isAccountVerified: { type: Boolean, default: false },

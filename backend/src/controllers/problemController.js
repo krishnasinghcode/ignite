@@ -35,7 +35,10 @@ export async function getAllProblems(req, res, next) {
   try {
     const { tags, domain, difficulty } = req.query;
 
-    const filter = { status: "published" };
+    const filter = {
+      status: "PUBLISHED",
+      deletedAt: null
+    };
 
     if (tags) {
       filter.tags = { $in: tags.split(",") };
@@ -63,7 +66,7 @@ export async function getProblemBySlug(req, res, next) {
   try {
     const problem = await Problem.findOne({
       slug: req.params.slug,
-      status: "published"
+      status: "PUBLISHED"
     });
 
     if (!problem) {
@@ -71,28 +74,6 @@ export async function getProblemBySlug(req, res, next) {
     }
 
     res.json(problem);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function publishProblem(req, res, next) {
-  try {
-    const problem = await Problem.findById(req.params.id);
-
-    if (!problem) {
-      return res.status(404).json({ message: "Problem not found" });
-    }
-
-    // optional: only creator or admin
-    if (problem.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    problem.status = "published";
-    await problem.save();
-
-    res.json({ message: "Problem published successfully" });
   } catch (err) {
     next(err);
   }
@@ -110,9 +91,15 @@ export async function updateProblem(req, res, next) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
+    if (!["DRAFT", "REJECTED"].includes(problem.status)) {
+      return res.status(403).json({
+        message: "Problem cannot be edited in current state"
+      });
+    }
+
     // Restrict edits after publish
     const restrictedFields = ["domain", "difficulty"];
-    if (problem.status === "published") {
+    if (problem.status === "PUBLISHED") {
       restrictedFields.forEach(field => delete req.body[field]);
     }
 

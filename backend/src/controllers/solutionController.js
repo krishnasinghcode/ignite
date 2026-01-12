@@ -22,7 +22,7 @@ export async function submitSolution(req, res, next) {
       repositoryUrl,
       writeup,
       techStack,
-      status: "submitted",
+      status: "SUBMITTED",
       isPublic: isPublic !== undefined ? isPublic : true // default true
     });
 
@@ -61,7 +61,8 @@ export async function getSolutionsByProblem(req, res, next) {
   try {
     const solutions = await Solution.find({
       problemId: req.params.problemId,
-      isPublic: true
+      isPublic: true,
+      status: "APPROVED"
     }).populate("userId", "name"); // populate user name
 
     res.json(solutions);
@@ -124,23 +125,37 @@ export async function getSolutionById(req, res, next) {
 export async function updateSolution(req, res, next) {
   try {
     const solution = await Solution.findById(req.params.solutionId);
-    
+
     if (!solution) {
       return res.status(404).json({ message: "Solution not found" });
     }
-    
+
     if (solution.userId.toString() !== req.user.id) {
       return res.status(403).json({ message: "Forbidden" });
     }
-    
-    if (solution.status === "reviewed") {
-      delete req.body.repositoryUrl;
-      delete req.body.techStack;
+
+    // 🔒 LOCK EDITS AFTER SUBMISSION
+    if (["UNDER_REVIEW", "APPROVED", "REJECTED"].includes(solution.status)) {
+      return res.status(403).json({
+        message: "Solution cannot be edited after review has started"
+      });
     }
-    
-    Object.assign(solution, req.body);
+
+    const allowedFields = [
+      "repositoryUrl",
+      "liveDemoUrl",
+      "writeup",
+      "techStack",
+      "isPublic"
+    ];
+
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        solution[field] = req.body[field];
+      }
+    });
+
     await solution.save();
-    
     res.json(solution);
   } catch (err) {
     next(err);

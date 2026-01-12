@@ -38,9 +38,23 @@ const SolutionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["submitted", "reviewed", "rejected"],
-      default: "submitted"
+      enum: [
+        "SUBMITTED",
+        "UNDER_REVIEW",
+        "APPROVED",
+        "REJECTED"
+      ],
+      default: "SUBMITTED",
+      index: true
     },
+
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+    reviewedAt: Date,
+    rejectionReason: String,
+
     isPublic: {
       type: Boolean,
       default: true

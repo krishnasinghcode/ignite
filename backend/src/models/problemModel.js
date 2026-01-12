@@ -71,10 +71,24 @@ const ProblemSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["draft", "published"],
-      default: "draft",
+      enum: [
+        "DRAFT",
+        "PENDING_REVIEW",
+        "APPROVED",
+        "PUBLISHED",
+        "REJECTED"
+      ],
+      default: "DRAFT",
       index: true
     },
+
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+    reviewedAt: Date,
+    rejectionReason: String,
+
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
