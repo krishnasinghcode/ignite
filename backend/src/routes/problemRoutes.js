@@ -4,7 +4,8 @@ import {
   deleteProblem,
   getAllProblems,
   getProblemBySlug,
-  updateProblem
+  updateProblem,
+  submitProblemForReview
 } from "../controllers/problemController.js";
 
 import {
@@ -32,6 +33,12 @@ router.put(
   authenticateUser,
   requireVerifiedAccount,
   updateProblem
+);
+
+router.patch(
+  "/:problemId/submit-review",
+  authenticateUser,
+  submitProblemForReview
 );
 
 router.delete(

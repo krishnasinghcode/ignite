@@ -139,3 +139,23 @@ export async function deleteProblem(req, res, next) {
   }
 }
 
+export async function submitProblemForReview(req, res, next) {
+  try {
+    const problem = await Problem.findById(req.params.problemId);
+
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    if (problem.status !== "DRAFT") {
+      return res.status(400).json({ message: "Invalid state transition" });
+    }
+
+    problem.status = "PENDING_REVIEW";
+    await problem.save();
+
+    res.json(problem);
+  } catch (err) {
+    next(err);
+  }
+}

@@ -54,21 +54,34 @@ const login = async (req, res) => {
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
-      return res.status(400).json({ message: "User does not exist, please signup!" });
+      return res
+        .status(400)
+        .json({ message: "User does not exist, please signup!" });
     }
 
-    const isMatch = await bcrypt.compare(String(password), existingUser.password);
+    const isMatch = await bcrypt.compare(
+      String(password),
+      existingUser.password
+    );
 
     if (!isMatch) {
       return res.status(400).json({ message: "Wrong password!" });
     }
 
-    const { accessToken, refreshToken } = generateTokens(existingUser._id, existingUser.email);
+    if (!existingUser.isAccountVerified) {
+      return res
+        .status(403)
+        .json({ message: "Account not verified" });
+    }
+
+    const { accessToken, refreshToken } =
+      generateTokens(existingUser);
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax", 
+      sameSite:
+        process.env.NODE_ENV === "production" ? "Strict" : "Lax",
       maxAge: Number(process.env.REFRESH_COOKIE_MAX_AGE),
     });
 
@@ -80,6 +93,7 @@ const login = async (req, res) => {
         name: existingUser.name,
         email: existingUser.email,
         isAccountVerified: existingUser.isAccountVerified,
+        role: existingUser.role
       },
     });
   } catch (error) {

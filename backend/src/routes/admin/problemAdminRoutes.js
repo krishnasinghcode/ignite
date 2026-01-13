@@ -1,6 +1,5 @@
 import express from "express";
 import {
-  submitProblemForReview,
   reviewProblem,
   publishProblem,
   getAllProblemsAdmin
@@ -17,7 +16,6 @@ router.use(authenticateUser, requireRole(["admin"]));
 
 router.get("/", getAllProblemsAdmin);
 
-router.patch("/:problemId/submit-review", submitProblemForReview);
 router.patch("/:problemId/review", reviewProblem);
 router.patch("/:problemId/publish", publishProblem);
 
