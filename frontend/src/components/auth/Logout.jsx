@@ -17,6 +17,7 @@ export default function Logout() {
       console.error("Logout failed", err);
     } finally {
       localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
       setLoading(false);
       navigate("/login");
     }

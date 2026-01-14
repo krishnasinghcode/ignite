@@ -255,21 +255,31 @@ const resetPassword = async (req, res) => {
     }
 };
 
-const refreshAccessToken = (req, res) => {
+const refreshAccessToken = async (req, res) => {
+  try {
     const token = req.cookies.refreshToken;
     if (!token) return res.status(401).json({ message: "No refresh token" });
 
-    jwt.verify(token, process.env.REFRESH_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: "Invalid refresh token" });
+    const decoded = jwt.verify(token, process.env.REFRESH_SECRET);
+    if (!decoded?.id) return res.status(403).json({ message: "Invalid refresh token" });
 
-        const newAccessToken = jwt.sign(
-            { id: user.id },
-            process.env.ACCESS_SECRET,
-            { expiresIn: "15m" }
-        );
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        res.status(200).json({ accessToken: newAccessToken });
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      maxAge: Number(process.env.REFRESH_COOKIE_MAX_AGE),
     });
+
+    return res.status(200).json({ accessToken });
+  } catch (err) {
+    console.error("Refresh token error:", err);
+    return res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
 };
 
 const getProfile = async (req, res) => {

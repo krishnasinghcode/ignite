@@ -1,18 +1,13 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/theme/ThemeToggle.jsx";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState(null);
-
-  // Read user from localStorage on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
+  const { user } = useAuth(); // <-- get user from AuthContext
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background">
@@ -97,7 +92,10 @@ export default function Navbar() {
 function NavLink({ to, label }) {
   return (
     <li>
-      <Link to={to} className="text-sm font-medium text-muted-foreground transition hover:text-foreground">
+      <Link
+        to={to}
+        className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+      >
         {label}
       </Link>
     </li>

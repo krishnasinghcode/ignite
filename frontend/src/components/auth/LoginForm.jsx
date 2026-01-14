@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthAPI } from "@/api/auth";
 import GoogleLoginButton from "./GoogleLoginButton";
+import { useAuth } from "@/context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // get login function from AuthContext
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,12 +22,13 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
+      // Call backend API
       const loginRes = await AuthAPI.login(email, password);
 
-      localStorage.setItem("accessToken", loginRes.accessToken);
+      // Store accessToken and user in AuthContext
+      login(loginRes.accessToken, loginRes.user);
 
-      localStorage.setItem("user", JSON.stringify(loginRes.user));
-
+      // Redirect to dashboard
       navigate("/");
     } catch (err) {
       console.error(err);
@@ -34,7 +37,6 @@ export default function LoginForm() {
       setLoading(false);
     }
   };
-
 
   return (
     <Card className="w-[380px]">
@@ -71,7 +73,7 @@ export default function LoginForm() {
         </form>
 
         <div className="text-center text-sm text-muted-foreground">OR</div>
-        <GoogleLoginButton />
+        <GoogleLoginButton /> {/* Google OAuth login integrated */}
 
         <div className="text-center text-sm text-muted-foreground">
           Don’t have an account?{" "}

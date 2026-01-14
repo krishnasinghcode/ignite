@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-
+import cookieParser from "cookie-parser"
 import authRoutes from "./routes/authRoutes.js";
 import problemRoutes from "./routes/problemRoutes.js";
 import solutionRoutes from "./routes/solutionRoutes.js";
@@ -11,6 +11,7 @@ import adminSolutionRoutes from "./routes/admin/solutionAdminRoutes.js";
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(cors({
   origin: "http://localhost:5173",
