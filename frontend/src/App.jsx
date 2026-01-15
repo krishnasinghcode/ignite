@@ -14,6 +14,9 @@ import SolutionDetail from "./pages/SolutionDetail";
 import CreateProblem from "./pages/CreateProblem";
 import SubmitSolution from "./pages/SubmitSolution";
 import UserProfile from "./pages/UserProfile";
+import MyProblems from "./pages/MyProblems";
+import AdminProblems from "./pages/admin/AdminProblems";
+import AdminProblemDetail from "./pages/admin/AdminProblemDetail"
 
 export default function App() {
   return (
@@ -31,6 +34,10 @@ export default function App() {
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:slug" element={<ProblemDetail />} />
 
+          <Route path="/admin/problems" element={<AdminProblems />} />
+          <Route path="/admin/problems/:problemId" element={<AdminProblemDetail />} />
+
+
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
@@ -38,6 +45,7 @@ export default function App() {
             <Route path="/problems/create" element={<CreateProblem />} />
             <Route path="/problems/:slug/submit" element={<SubmitSolution />} />
             <Route path="/users/:userId" element={<UserProfile />} />
+            <Route path="/problems/my" element={<MyProblems />} />
           </Route>
         </Routes>
       </Layout>

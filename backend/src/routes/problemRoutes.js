@@ -5,7 +5,8 @@ import {
   getAllProblems,
   getProblemBySlug,
   updateProblem,
-  submitProblemForReview
+  submitProblemForReview,
+  getMyProblems
 } from "../controllers/problemController.js";
 
 import {
@@ -16,11 +17,22 @@ import {
 
 const router = express.Router();
 
-// Public
+// Get all published problems
 router.get("/", getAllProblems);
+
+// Get all problems of logged-in user
+router.get(
+  "/my",
+  authenticateUser,
+  requireVerifiedAccount,
+  getMyProblems
+);
+
+// Get single published problem by slug
+// **Dynamic route should come after any specific routes like "/my"**
 router.get("/:slug", getProblemBySlug);
 
-// User (verified)
+// Create a new problem
 router.post(
   "/",
   authenticateUser,
@@ -28,6 +40,7 @@ router.post(
   createProblem
 );
 
+// Update a problem by ID
 router.put(
   "/:id",
   authenticateUser,
@@ -35,12 +48,15 @@ router.put(
   updateProblem
 );
 
+// Submit a problem for review
 router.patch(
   "/:problemId/submit-review",
   authenticateUser,
   submitProblemForReview
 );
 
+// -------------------- ADMIN ROUTES -------------------- //
+// Soft-delete a problem (admin only)
 router.delete(
   "/:id",
   authenticateUser,

@@ -2,7 +2,8 @@ import express from "express";
 import {
   reviewProblem,
   publishProblem,
-  getAllProblemsAdmin
+  getAllProblemsAdmin,
+  getProblemByIdAdmin
 } from "../../controllers/problemAdminController.js";
 
 import {
@@ -15,7 +16,7 @@ const router = express.Router();
 router.use(authenticateUser, requireRole(["admin"]));
 
 router.get("/", getAllProblemsAdmin);
-
+router.get("/:problemId", getProblemByIdAdmin);
 router.patch("/:problemId/review", reviewProblem);
 router.patch("/:problemId/publish", publishProblem);
 

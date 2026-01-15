@@ -74,3 +74,22 @@ export async function getAllProblemsAdmin(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Admin get single problem by ID
+ */
+export async function getProblemByIdAdmin(req, res, next) {
+  try {
+    const problem = await Problem.findById(req.params.problemId)
+      .populate("createdBy", "name email")
+      .populate("reviewedBy", "name email");
+
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    res.json(problem);
+  } catch (err) {
+    next(err);
+  }
+}

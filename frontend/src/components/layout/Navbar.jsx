@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate,Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/theme/ThemeToggle.jsx";
 import { useAuth } from "@/context/AuthContext";
@@ -7,7 +7,11 @@ import { useAuth } from "@/context/AuthContext";
 export default function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth(); // <-- get user from AuthContext
+  const { user } = useAuth();
+
+  // fallback check from localStorage if needed
+  const localUser = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = (user?.role === "admin") || (localUser?.role === "admin");
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background">
@@ -23,8 +27,11 @@ export default function Navbar() {
         {/* Desktop Navigation */}
         <ul className="hidden items-center gap-6 md:flex">
           <NavLink to="/problems" label="Problems" />
-
+          {user && <NavLink to="/problems/my" label="My Problems" />}
           {user && <NavLink to={`/users/${user._id}`} label="My Solutions" />}
+
+          {/* Admin link */}
+          {isAdmin && <NavLink to="/admin/problems" label="Admin Review" />}
 
           {!user ? (
             <Button onClick={() => navigate("/login")}>Login</Button>
@@ -51,10 +58,9 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="space-y-2 border-t px-4 pb-4 pt-3 md:hidden">
           <MobileLink to="/problems" label="Problems" setOpen={setMobileOpen} />
-
-          {user && (
-            <MobileLink to={`/users/${user._id}`} label="My Solutions" setOpen={setMobileOpen} />
-          )}
+          {user && <MobileLink to="/problems/my" label="My Problems" setOpen={setMobileOpen} />}
+          {user && <MobileLink to={`/users/${user._id}`} label="My Solutions" setOpen={setMobileOpen} />}
+          {isAdmin && <MobileLink to="/admin/problems" label="Admin Review" setOpen={setMobileOpen} />}
 
           {!user ? (
             <Button

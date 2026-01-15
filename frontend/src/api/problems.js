@@ -23,5 +23,19 @@ export const ProblemAPI = {
   publishProblem: async (problemId) => {
     const res = await api.patch(`/problems/${problemId}/publish`);
     return res.data;
-  }
+  },
+
+  // Get all problems of logged-in user
+  getMyProblems: async () => {
+    const res = await api.get("/problems/my");
+    return res.data;
+  },
+
+
+  // Submit a problem for review
+  submitProblemForReview: async (problemId) => {
+    const res = await api.patch(`/problems/${problemId}/submit-review`);
+    return res.data;
+  },
+
 };
