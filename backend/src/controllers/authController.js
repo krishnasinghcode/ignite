@@ -258,15 +258,25 @@ const resetPassword = async (req, res) => {
 const refreshAccessToken = async (req, res) => {
   try {
     const token = req.cookies.refreshToken;
-    if (!token) return res.status(401).json({ message: "No refresh token" });
+    if (!token) {
+      return res.status(401).json({ message: "No refresh token" });
+    }
 
     const decoded = jwt.verify(token, process.env.REFRESH_SECRET);
-    if (!decoded?.id) return res.status(403).json({ message: "Invalid refresh token" });
+    if (!decoded?.id) {
+      return res.status(403).json({ message: "Invalid refresh token" });
+    }
 
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findById(decoded.id).select(
+      "_id name email role isAccountVerified"
+    );
 
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } =
+      generateTokens(user);
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
@@ -275,7 +285,16 @@ const refreshAccessToken = async (req, res) => {
       maxAge: Number(process.env.REFRESH_COOKIE_MAX_AGE),
     });
 
-    return res.status(200).json({ accessToken });
+    return res.status(200).json({
+      accessToken,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAccountVerified: user.isAccountVerified,
+      },
+    });
   } catch (err) {
     console.error("Refresh token error:", err);
     return res.status(403).json({ message: "Invalid or expired refresh token" });

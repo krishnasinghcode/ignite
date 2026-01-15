@@ -1,17 +1,34 @@
-// src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import API from "@/api/axios";
 
-const AuthContext = createContext();
+/* ---------------- helpers ---------------- */
+
+const safeParse = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw || raw === "undefined" || raw === "null") return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const getStoredToken = () => {
+  const token = localStorage.getItem("accessToken");
+  return token && token !== "undefined" ? token : null;
+};
+
+/* ---------------- context ---------------- */
+
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken"));
-  const [user, setUser] = useState(
-    localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null
-  );
+  const [accessToken, setAccessToken] = useState(getStoredToken);
+  const [user, setUser] = useState(() => safeParse("user"));
   const [loading, setLoading] = useState(true);
 
-  // On initial load, try to refresh token if accessToken exists
+  /* -------- refresh on initial load -------- */
+
   useEffect(() => {
     const refreshOnLoad = async () => {
       if (!accessToken) {
@@ -20,7 +37,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await API.get("/auth/refresh-token"); // Axios handles cookie automatically
+        const res = await API.get("/auth/refresh-token");
         const { accessToken: newToken, user: userData } = res.data;
 
         localStorage.setItem("accessToken", newToken);
@@ -29,7 +46,7 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(newToken);
         setUser(userData);
       } catch (err) {
-        console.log("Token refresh failed", err);
+        console.error("Token refresh failed", err);
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
         setAccessToken(null);
@@ -40,7 +57,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     refreshOnLoad();
-  }, []);
+  }, [accessToken]);
+
+  /* ---------------- actions ---------------- */
 
   const login = (token, userData) => {
     localStorage.setItem("accessToken", token);
@@ -57,11 +76,27 @@ export const AuthProvider = ({ children }) => {
     window.location.href = "/login";
   };
 
+  /* ---------------- provider ---------------- */
+
   return (
-    <AuthContext.Provider value={{ accessToken, user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        accessToken,
+        user,
+        login,
+        logout,
+        loading
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return ctx;
+};
