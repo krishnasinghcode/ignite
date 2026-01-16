@@ -192,3 +192,23 @@ export async function getMyProblems(req, res, next) {
     next(err);
   }
 }
+
+// Get single problem by ID (author-only preview)
+export async function getProblemById(req, res, next) {
+  try {
+    const problem = await Problem.findById(req.params.id);
+
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    // Only the author can preview their draft/rejected/pending problems
+    if (problem.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    res.json(problem);
+  } catch (err) {
+    next(err);
+  }
+}

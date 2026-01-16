@@ -6,7 +6,8 @@ import {
   getProblemBySlug,
   updateProblem,
   submitProblemForReview,
-  getMyProblems
+  getMyProblems,
+  getProblemById
 } from "../controllers/problemController.js";
 
 import {
@@ -63,5 +64,14 @@ router.delete(
   requireRole(["ADMIN"]),
   deleteProblem
 );
+
+// Get problem by ID for author preview
+router.get(
+  "/:id/by-id",
+  authenticateUser,
+  requireVerifiedAccount,
+  getProblemById
+);
+
 
 export default router; 

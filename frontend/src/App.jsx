@@ -5,18 +5,20 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicRoute from "@/components/auth/PublicRoute";
 
 import Dashboard from "./pages/Dashboard";
-import ForgotPassword from "./pages/ForgotPassword";
-import Signup from "./pages/Signup";
-import Login from "./pages/Login";
-import Problems from "./pages/Problems";
-import ProblemDetail from "./pages/ProblemDetail";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import Signup from "./pages/auth/Signup";
+import Login from "./pages/auth/Login";
+import Problems from "./pages/problems/Problems";
+import ProblemDetail from "./pages/problems/ProblemDetail";
 import SolutionDetail from "./pages/SolutionDetail";
-import CreateProblem from "./pages/CreateProblem";
+import CreateProblem from "./pages/problems/CreateProblem";
 import SubmitSolution from "./pages/SubmitSolution";
 import UserProfile from "./pages/UserProfile";
-import MyProblems from "./pages/MyProblems";
+import MyProblems from "./pages/problems/MyProblems";
 import AdminProblems from "./pages/admin/AdminProblems";
-import AdminProblemDetail from "./pages/admin/AdminProblemDetail"
+import AdminProblemDetail from "./pages/admin/AdminProblemDetail";
+import EditProblem from "./pages/problems/EditProblem";
+import ProblemPreview from "./pages/problems/ProblemPreview";
 
 export default function App() {
   return (
@@ -34,19 +36,23 @@ export default function App() {
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:slug" element={<ProblemDetail />} />
 
-          <Route path="/admin/problems" element={<AdminProblems />} />
-          <Route path="/admin/problems/:problemId" element={<AdminProblemDetail />} />
-
-
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/solutions/:solutionId" element={<SolutionDetail />} />
+            <Route path="/problems/:id/preview" element={<ProblemPreview />} />
+
             <Route path="/problems/create" element={<CreateProblem />} />
+            <Route path="/problems/edit/:id" element={<EditProblem />} />
+
             <Route path="/problems/:slug/submit" element={<SubmitSolution />} />
             <Route path="/users/:userId" element={<UserProfile />} />
             <Route path="/problems/my" element={<MyProblems />} />
+
+            <Route path="/admin/problems" element={<AdminProblems />} />
+            <Route path="/admin/problems/:problemId" element={<AdminProblemDetail />} />
           </Route>
+
         </Routes>
       </Layout>
     </AuthProvider>
