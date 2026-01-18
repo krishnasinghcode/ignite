@@ -38,12 +38,7 @@ const SolutionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: [
-        "SUBMITTED",
-        "UNDER_REVIEW",
-        "APPROVED",
-        "REJECTED"
-      ],
+      enum: ["SUBMITTED", "APPROVED", "REJECTED"],
       default: "SUBMITTED",
       index: true
     },

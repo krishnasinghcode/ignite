@@ -102,15 +102,19 @@ export async function toggleSolutionVisibility(req, res, next) {
  */
 export async function getSolutionById(req, res, next) {
   try {
-    const solution = await Solution.findOne({
-      _id: req.params.solutionId,
-      isPublic: true
-    })
+    const solution = await Solution.findById(req.params.solutionId)
       .populate("userId", "name")
       .populate("problemId", "title slug");
 
     if (!solution) {
       return res.status(404).json({ message: "Solution not found" });
+    }
+
+    // Allow access if: 1. It is public OR 2. The logged-in user is the owner
+    const isOwner = req.user && solution.userId._id.toString() === req.user.id;
+    
+    if (!solution.isPublic && !isOwner) {
+      return res.status(403).json({ message: "Access denied to private solution" });
     }
 
     res.json(solution);

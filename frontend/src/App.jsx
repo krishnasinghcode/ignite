@@ -10,15 +10,18 @@ import Signup from "./pages/auth/Signup";
 import Login from "./pages/auth/Login";
 import Problems from "./pages/problems/Problems";
 import ProblemDetail from "./pages/problems/ProblemDetail";
-import SolutionDetail from "./pages/SolutionDetail";
+import SolutionDetail from "./pages/solutions/SolutionDetail";
 import CreateProblem from "./pages/problems/CreateProblem";
-import SubmitSolution from "./pages/SubmitSolution";
+import SubmitSolution from "./pages/solutions/SubmitSolution";
 import UserProfile from "./pages/UserProfile";
 import MyProblems from "./pages/problems/MyProblems";
 import AdminProblems from "./pages/admin/AdminProblems";
 import AdminProblemDetail from "./pages/admin/AdminProblemDetail";
 import EditProblem from "./pages/problems/EditProblem";
 import ProblemPreview from "./pages/problems/ProblemPreview";
+import AdminSolutions from "./pages/admin/AdminSolutions";
+import AdminSolutionDetail from "./pages/admin/AdminSolutionDetail";
+import EditSolution from "./pages/solutions/EditSolution";
 
 export default function App() {
   return (
@@ -40,6 +43,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/solutions/:solutionId" element={<SolutionDetail />} />
+            <Route path="/solutions/edit/:solutionId" element={<EditSolution />} />
             <Route path="/problems/:id/preview" element={<ProblemPreview />} />
 
             <Route path="/problems/create" element={<CreateProblem />} />
@@ -51,6 +55,8 @@ export default function App() {
 
             <Route path="/admin/problems" element={<AdminProblems />} />
             <Route path="/admin/problems/:problemId" element={<AdminProblemDetail />} />
+            <Route path="/admin/solutions" element={<AdminSolutions />} />
+            <Route path="/admin/solutions/:solutionId" element={<AdminSolutionDetail />} />
           </Route>
 
         </Routes>

@@ -14,7 +14,9 @@ export default function ArrayInput({ label, values, onChange, disabled }) {
 
   return (
     <div className="space-y-2">
-      <label className="font-medium">{label}</label>
+      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        {label}
+      </label>
 
       {values.map((val, i) => (
         <div key={i} className="flex gap-2">
@@ -23,11 +25,14 @@ export default function ArrayInput({ label, values, onChange, disabled }) {
             onChange={(e) => updateValue(i, e.target.value)}
             disabled={disabled}
             className="flex-1"
+            placeholder={`Enter ${label.toLowerCase()}...`}
           />
           {!disabled && (
             <Button
+              type="button" // CRITICAL FIX: Prevents form submission
               variant="outline"
               size="sm"
+              className="px-3"
               onClick={() => removeValue(i)}
             >
               ✕
@@ -38,11 +43,13 @@ export default function ArrayInput({ label, values, onChange, disabled }) {
 
       {!disabled && (
         <Button
+          type="button"
           variant="outline"
           size="sm"
+          className="mt-1"
           onClick={() => onChange([...values, ""])}
         >
-          + Add
+          + Add {label}
         </Button>
       )}
     </div>

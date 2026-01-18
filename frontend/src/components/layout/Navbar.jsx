@@ -9,9 +9,12 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
 
-  // fallback check from localStorage if needed
+  // 1. Determine roles clearly
   const localUser = JSON.parse(localStorage.getItem("user"));
-  const isAdmin = (user?.role === "admin") || (localUser?.role === "admin");
+  const activeUser = user || localUser;
+  
+  const isAdmin = activeUser?.role === "admin";
+  const isUser = activeUser && activeUser.role !== "admin";
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background">
@@ -19,7 +22,7 @@ export default function Navbar() {
         {/* Logo */}
         <button
           onClick={() => navigate("/")}
-          className="text-xl font-bold tracking-tight"
+          className="text-xl font-bold tracking-tight flex items-center gap-2"
         >
           Ignite <span className="text-orange-500">🔥</span>
         </button>
@@ -27,17 +30,31 @@ export default function Navbar() {
         {/* Desktop Navigation */}
         <ul className="hidden items-center gap-6 md:flex">
           <NavLink to="/problems" label="Problems" />
-          {user && <NavLink to="/problems/my" label="My Problems" />}
-          {user && <NavLink to={`/users/${user._id}`} label="My Solutions" />}
 
-          {/* Admin link */}
-          {isAdmin && <NavLink to="/admin/problems" label="Admin Review" />}
+          {/* User Specific Links (Hidden from Admins) */}
+          {isUser && (
+            <>
+              <NavLink to="/problems/my" label="My Problems" />
+              <NavLink to={`/users/${activeUser._id}`} label="My Solutions" />
+            </>
+          )}
 
-          {!user ? (
+          {/* Admin Specific Links (Hidden from Users) */}
+          {isAdmin && (
+            <>
+              <NavLink to="/admin/problems" label="Problems Review" />
+              <NavLink to="/admin/solutions" label="Solutions Review" />
+            </>
+          )}
+
+          {!activeUser ? (
             <Button onClick={() => navigate("/login")}>Login</Button>
           ) : (
-            <Button variant="outline" onClick={() => navigate(`/users/${user._id}`)}>
-              {user.name}
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(`/users/${activeUser._id}`)}
+            >
+              {activeUser.name}
             </Button>
           )}
 
@@ -46,7 +63,7 @@ export default function Navbar() {
 
         {/* Mobile Toggle */}
         <button
-          className="md:hidden text-xl"
+          className="md:hidden text-xl p-2"
           onClick={() => setMobileOpen((prev) => !prev)}
           aria-label="Toggle menu"
         >
@@ -56,15 +73,26 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="space-y-2 border-t px-4 pb-4 pt-3 md:hidden">
+        <div className="space-y-2 border-t px-4 pb-4 pt-3 md:hidden bg-background">
           <MobileLink to="/problems" label="Problems" setOpen={setMobileOpen} />
-          {user && <MobileLink to="/problems/my" label="My Problems" setOpen={setMobileOpen} />}
-          {user && <MobileLink to={`/users/${user._id}`} label="My Solutions" setOpen={setMobileOpen} />}
-          {isAdmin && <MobileLink to="/admin/problems" label="Admin Review" setOpen={setMobileOpen} />}
+          
+          {isUser && (
+            <>
+              <MobileLink to="/problems/my" label="My Problems" setOpen={setMobileOpen} />
+              <MobileLink to={`/users/${activeUser._id}`} label="My Solutions" setOpen={setMobileOpen} />
+            </>
+          )}
 
-          {!user ? (
+          {isAdmin && (
+            <>
+              <MobileLink to="/admin/problems" label="Problems Review" setOpen={setMobileOpen} />
+              <MobileLink to="/admin/solutions" label="Solutions Review" setOpen={setMobileOpen} />
+            </>
+          )}
+
+          {!activeUser ? (
             <Button
-              className="w-full"
+              className="w-full mt-4"
               onClick={() => {
                 setMobileOpen(false);
                 navigate("/login");
@@ -75,17 +103,17 @@ export default function Navbar() {
           ) : (
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full mt-4"
               onClick={() => {
                 setMobileOpen(false);
-                navigate(`/users/${user._id}`);
+                navigate(`/users/${activeUser._id}`);
               }}
             >
-              {user.name}
+              {activeUser.name}
             </Button>
           )}
 
-          <div className="pt-2">
+          <div className="flex justify-center pt-4 border-t mt-4">
             <ThemeToggle />
           </div>
         </div>
@@ -113,7 +141,7 @@ function MobileLink({ to, label, setOpen }) {
     <Link
       to={to}
       onClick={() => setOpen(false)}
-      className="block py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+      className="block py-2 text-base font-medium text-muted-foreground transition hover:text-foreground border-b border-muted/20"
     >
       {label}
     </Link>

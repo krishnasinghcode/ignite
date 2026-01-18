@@ -1,33 +1,40 @@
 import api from "./axios";
 
 export const SolutionAPI = {
-  // Submit a solution (POST body)
+  // Submit a new solution
   submitSolution: async (payload) => {
     const res = await api.post("/solutions", payload);
     return res.data;
   },
 
-  // Get all public solutions submitted by a specific user
-  getSolutionsByUser: async (userId) => {
-    const res = await api.get(`/solutions/user/${userId}`);
+  // Update an existing solution
+  updateSolution: async (solutionId, payload) => {
+    // Change .patch to .put
+    const res = await api.put(`/solutions/${solutionId}`, payload);
     return res.data;
   },
 
-  // Get all public solutions for a specific problem
+  // Get a specific solution by ID (public or owned by user)
+  getSolutionById: async (solutionId) => {
+    const res = await api.get(`/solutions/${solutionId}`);
+    return res.data;
+  },
+
+  // Get all solutions for a specific problem (e.g., for a "Leaderboard" or "Community" tab)
   getSolutionsByProblem: async (problemId) => {
     const res = await api.get(`/solutions/problem/${problemId}`);
     return res.data;
   },
 
-  // Optional: Toggle solution visibility (owner only)
-  toggleVisibility: async (solutionId) => {
-    const res = await api.patch(`/solutions/${solutionId}/toggle-visibility`);
+  // Get all solutions for a specific user (for their Profile page)
+  getSolutionsByUser: async (userId) => {
+    const res = await api.get(`/solutions/user/${userId}`);
     return res.data;
   },
 
-  // Get a specific solution for an problem
-  getSolutionById: async (solutionId) => {
-    const res = await api.get(`/solutions/${solutionId}`);
+  // Delete a solution
+  deleteSolution: async (solutionId) => {
+    const res = await api.delete(`/solutions/${solutionId}`);
     return res.data;
   }
 };
