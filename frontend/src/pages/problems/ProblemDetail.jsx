@@ -3,12 +3,22 @@ import { useEffect, useState } from "react";
 import { ProblemAPI } from "@/api/problems";
 import { SolutionAPI } from "@/api/solutions";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  ClipboardList, 
+  ShieldAlert, 
+  Lightbulb, 
+  CheckCircle2, 
+  Users, 
+  ArrowLeft,
+  Layout
+} from "lucide-react";
 
 export default function ProblemDetail() {
-  const { slug, id } = useParams(); // slug → public, id → preview
+  const { slug, id } = useParams();
   const navigate = useNavigate();
 
   const [problem, setProblem] = useState(null);
@@ -20,17 +30,14 @@ export default function ProblemDetail() {
       setLoading(true);
       try {
         const resProblem = id
-          ? await ProblemAPI.getProblemById(id)       // preview (any status)
-          : await ProblemAPI.getProblemBySlug(slug);  // public (published only)
+          ? await ProblemAPI.getProblemById(id)
+          : await ProblemAPI.getProblemBySlug(slug);
 
         setProblem(resProblem);
 
         if (resProblem.status === "PUBLISHED") {
-          const resSolutions =
-            await SolutionAPI.getSolutionsByProblem(resProblem._id);
+          const resSolutions = await SolutionAPI.getSolutionsByProblem(resProblem._id);
           setSolutions(resSolutions);
-        } else {
-          setSolutions([]);
         }
       } catch (err) {
         console.error(err);
@@ -38,132 +45,146 @@ export default function ProblemDetail() {
         setLoading(false);
       }
     };
-
     fetchProblemAndSolutions();
   }, [slug, id]);
 
-  if (loading)
-    return (
-      <p className="text-center text-sm text-muted-foreground">Loading...</p>
-    );
+  if (loading) return (
+    <div className="flex justify-center items-center min-h-[400px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
 
-  if (!problem)
-    return (
-      <p className="text-center text-sm text-muted-foreground">
-        Problem not found
-      </p>
-    );
+  if (!problem) return <p className="text-center py-20 text-muted-foreground">Problem not found</p>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
-      {/* Problem Details */}
-      <Card>
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl font-bold line-clamp-2">
-            {problem.title}
-          </CardTitle>
-
-          {problem.status !== "PUBLISHED" && (
-            <Badge variant="destructive" className="w-fit">
-              Preview — {problem.status}
-            </Badge>
-          )}
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {problem.summary}
-          </p>
-
-          <p className="text-base whitespace-pre-line">
-            {problem.description}
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">{problem.domain}</Badge>
-            <Badge variant="secondary">{problem.difficulty}</Badge>
-
-            {problem.tags?.map((tag) => (
-              <Badge key={tag} variant="outline">
-                {tag}
-              </Badge>
-            ))}
+    <div className="max-w-5xl mx-auto p-6 space-y-8 animate-in fade-in duration-500">
+      
+      {/* 1. Navigation & Header */}
+      <div className="flex flex-col gap-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="w-fit -ml-2 text-muted-foreground">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Challenges
+        </Button>
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">{problem.domain}</Badge>
+              <Badge variant="secondary">{problem.difficulty}</Badge>
+              {problem.status !== "PUBLISHED" && (
+                <Badge variant="destructive">Preview: {problem.status}</Badge>
+              )}
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{problem.title}</h1>
+            <p className="text-lg text-muted-foreground max-w-3xl italic">"{problem.summary}"</p>
           </div>
-
+          
           {problem.status === "PUBLISHED" && (
-            <Button
-              onClick={() => navigate(`/problems/${problem.slug}/submit`)}
-              className="w-full mt-4"
-            >
-              Submit Your Solution
+            <Button size="lg" onClick={() => navigate(`/problems/${problem.slug}/submit`)} className="shadow-lg shadow-primary/20">
+              Submit Solution
             </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Community Solutions */}
-      {problem.status === "PUBLISHED" && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Community Solutions</h2>
+      {/* 2. Main Content Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0 mb-6 gap-6">
+          <TabsTrigger value="overview" className="data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 pb-3 bg-transparent font-semibold transition-none">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="technical" className="data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 pb-3 bg-transparent font-semibold transition-none">
+            Technical Brief
+          </TabsTrigger>
+          <TabsTrigger value="solutions" className="data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 pb-3 bg-transparent font-semibold transition-none">
+            Solutions ({solutions.length})
+          </TabsTrigger>
+        </TabsList>
 
+        <TabsContent value="overview" className="space-y-6">
+          <Card className="border-none shadow-none bg-transparent">
+            <CardContent className="p-0 space-y-6">
+              <div className="prose prose-zinc dark:prose-invert max-w-none">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Layout className="h-5 w-5 text-primary" /> Description
+                </h3>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {problem.description || "No detailed description provided."}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SectionList icon={<Lightbulb className="text-amber-500" />} title="Context" items={[problem.context]} />
+                <SectionList icon={<CheckCircle2 className="text-emerald-500" />} title="Objectives" items={problem.objectives} />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="technical" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <SectionList icon={<ShieldAlert className="text-rose-500" />} title="Constraints" items={problem.constraints} color="bg-rose-500/5 border-rose-500/10" />
+            <SectionList icon={<ClipboardList className="text-blue-500" />} title="Assumptions" items={problem.assumptions} color="bg-blue-500/5 border-blue-500/10" />
+            <SectionList icon={<Users className="text-indigo-500" />} title="Evaluation Criteria" items={problem.evaluationCriteria} />
+            <SectionList icon={<CheckCircle2 className="text-primary" />} title="Expected Deliverables" items={problem.expectedDeliverables} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="solutions">
           {solutions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No solutions yet. Be the first to submit!
-            </p>
+            <div className="text-center py-20 border-2 border-dashed rounded-xl">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <p className="mt-4 text-muted-foreground">No community solutions yet. Be the first!</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {solutions.map((sol) => (
-                <Card
-                  key={sol._id}
-                  className="hover:shadow-md transition"
-                >
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      {sol.userId?.name}
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent className="space-y-2">
-                    {sol.techStack?.length > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        Tech Stack: {sol.techStack.join(", ")}
-                      </p>
-                    )}
-
-                    <p className="text-sm text-gray-700 line-clamp-4">
-                      {typeof sol.writeup === "string"
-                        ? sol.writeup
-                        : JSON.stringify(sol.writeup)}
-                    </p>
-
-                    <div className="flex flex-col gap-2 mt-2">
-                      {sol.repositoryUrl && (
-                        <a
-                          href={sol.repositoryUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 underline"
-                        >
-                          View Repository
-                        </a>
-                      )}
-
-                      <Button
-                        variant="link"
-                        onClick={() =>
-                          navigate(`/solutions/${sol._id}`)
-                        }
-                      >
-                        View Full Solution →
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 gap-4">
+               {solutions.map((sol) => (
+                <SolutionCard key={sol._id} sol={sol} navigate={navigate} />
               ))}
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+// --- Reusable Small Components for UI Cleanliness ---
+
+function SectionList({ icon, title, items, color = "bg-card border" }) {
+  if (!items || items.length === 0 || !items[0]) return null;
+  return (
+    <Card className={`${color} shadow-sm`}>
+      <CardHeader className="py-4 flex flex-row items-center gap-3 space-y-0">
+        {icon}
+        <CardTitle className="text-lg">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-4">
+        <ul className="space-y-2">
+          {items.map((item, i) => (
+            <li key={i} className="text-sm text-muted-foreground flex gap-2">
+              <span className="text-primary">•</span> {item}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SolutionCard({ sol, navigate }) {
+  return (
+    <Card className="hover:border-primary/50 transition-colors">
+      <CardContent className="p-5 flex justify-between items-center">
+        <div>
+          <h4 className="font-bold text-lg">{sol.userId?.name || "Anonymous User"}</h4>
+          <div className="flex gap-2 mt-1">
+            {sol.techStack?.map(s => <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>)}
+          </div>
+        </div>
+        <Button variant="outline" onClick={() => navigate(`/solutions/${sol._id}`)}>
+          View Full Solution
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
