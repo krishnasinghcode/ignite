@@ -22,6 +22,7 @@ import ProblemPreview from "./pages/problems/ProblemPreview";
 import AdminSolutions from "./pages/admin/AdminSolutions";
 import AdminSolutionDetail from "./pages/admin/AdminSolutionDetail";
 import EditSolution from "./pages/solutions/EditSolution";
+import UserSolutions from "./pages/solutions/UserSolutions";
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/solutions/:solutionId" element={<SolutionDetail />} />
             <Route path="/solutions/edit/:solutionId" element={<EditSolution />} />
+            <Route path="/solutions/my" element={<UserSolutions />} />
             <Route path="/problems/:id/preview" element={<ProblemPreview />} />
 
             <Route path="/problems/create" element={<CreateProblem />} />

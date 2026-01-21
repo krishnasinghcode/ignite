@@ -7,6 +7,7 @@ import Otp from '../models/otpModel.js';
 import { OAuth2Client } from "google-auth-library";
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Signup Controller
 const signup = async (req, res) => {
@@ -301,30 +302,6 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
-const getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select(
-      "name email isAccountVerified"
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      isAccountVerified: user.isAccountVerified,
-    });
-  } catch (error) {
-    console.error("Error fetching profile:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 const googleLogin = async (req, res) => {
   try {
     const { credential } = req.body; // Google ID token
@@ -397,6 +374,5 @@ export {
     verifyResetOTP,
     resetPassword,
     refreshAccessToken,
-    getProfile,
     googleLogin
 };

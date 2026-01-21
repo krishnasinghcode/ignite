@@ -1,18 +1,11 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/context/AuthContext";
 import Logout from "@/components/auth/Logout";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const { user } = useAuth();
 
   if (!user) return <div>Loading...</div>;
 
@@ -21,11 +14,8 @@ export default function Dashboard() {
       <div>{user.name}</div>
       <div>{user.email}</div>
 
-      <Button
-        className="border border-b-green-700"
-        onClick={() => navigate(`/users/${user._id}`)}
-      >
-        Your Solutions
+      <Button onClick={() => navigate("/profile")}>
+        My Profile
       </Button>
 
       <Logout />

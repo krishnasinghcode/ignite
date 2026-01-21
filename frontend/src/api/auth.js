@@ -37,15 +37,7 @@ googleLogin: async (credential) => {
     );
     return res.data;
   },
-
-  // Get profile (protected)
-  profile: async () => {
-    const res = await api.get("/auth/profile", {
-      withCredentials: true,
-    });
-    return res.data;
-  },
-
+  
   // Refresh access token
   refreshToken: async () => {
     const res = await api.get("/auth/refresh-token", {

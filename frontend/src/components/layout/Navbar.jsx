@@ -12,7 +12,7 @@ export default function Navbar() {
   // 1. Determine roles clearly
   const localUser = JSON.parse(localStorage.getItem("user"));
   const activeUser = user || localUser;
-  
+
   const isAdmin = activeUser?.role === "admin";
   const isUser = activeUser && activeUser.role !== "admin";
 
@@ -35,7 +35,7 @@ export default function Navbar() {
           {isUser && (
             <>
               <NavLink to="/problems/my" label="My Problems" />
-              <NavLink to={`/users/${activeUser._id}`} label="My Solutions" />
+              <NavLink to={`/solutions/my`} label="My Solutions" />
             </>
           )}
 
@@ -50,12 +50,13 @@ export default function Navbar() {
           {!activeUser ? (
             <Button onClick={() => navigate("/login")}>Login</Button>
           ) : (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => navigate(`/users/${activeUser._id}`)}
             >
               {activeUser.name}
             </Button>
+
           )}
 
           <ThemeToggle />
@@ -75,7 +76,7 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="space-y-2 border-t px-4 pb-4 pt-3 md:hidden bg-background">
           <MobileLink to="/problems" label="Problems" setOpen={setMobileOpen} />
-          
+
           {isUser && (
             <>
               <MobileLink to="/problems/my" label="My Problems" setOpen={setMobileOpen} />

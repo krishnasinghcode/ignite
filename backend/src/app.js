@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser"
 import authRoutes from "./routes/authRoutes.js";
 import problemRoutes from "./routes/problemRoutes.js";
 import solutionRoutes from "./routes/solutionRoutes.js";
-
+import userRoutes from "./routes/userRoutes.js";
 import adminProblemRoutes from "./routes/admin/problemAdminRoutes.js";
 import adminSolutionRoutes from "./routes/admin/solutionAdminRoutes.js";
 
@@ -30,6 +30,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 /* Public / User routes */
+app.use("/api/users", userRoutes);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/problems", problemRoutes);
 app.use("/api/solutions", solutionRoutes);

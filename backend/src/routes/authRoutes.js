@@ -13,7 +13,6 @@ import {
   resetPassword,
   refreshAccessToken,
   logout,
-  getProfile,
   googleLogin
 } from '../controllers/authController.js';
 
@@ -42,8 +41,6 @@ router.post('/reset-password', resetPassword);
 
 // Refresh Access Token
 router.get("/refresh-token", refreshAccessToken);
-
-router.get("/profile", authenticateUser, getProfile);
 
 router.post('/logout', authenticateUser, logout);
 
