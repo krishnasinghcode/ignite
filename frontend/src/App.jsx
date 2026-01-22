@@ -23,24 +23,27 @@ import AdminSolutions from "./pages/admin/AdminSolutions";
 import AdminSolutionDetail from "./pages/admin/AdminSolutionDetail";
 import EditSolution from "./pages/solutions/EditSolution";
 import UserSolutions from "./pages/solutions/UserSolutions";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
     <AuthProvider>
-      <Layout>
-        <Routes>
-          {/* Public routes for unauthenticated users */}
+      <Routes>
+
+        <Route element={<Layout />}>
+
+          {/* Public Routes */}
+
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/problems" element={<Problems />} />
+            <Route path="/problems/:slug" element={<ProblemDetail />} />
           </Route>
 
-          {/* Public routes that are accessible to anyone */}
-          <Route path="/problems" element={<Problems />} />
-          <Route path="/problems/:slug" element={<ProblemDetail />} />
-
           {/* Protected routes */}
+
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/solutions/:solutionId" element={<SolutionDetail />} />
@@ -50,8 +53,8 @@ export default function App() {
 
             <Route path="/problems/create" element={<CreateProblem />} />
             <Route path="/problems/edit/:id" element={<EditProblem />} />
-
             <Route path="/problems/:slug/submit" element={<SubmitSolution />} />
+
             <Route path="/users/:userId" element={<UserProfile />} />
             <Route path="/problems/my" element={<MyProblems />} />
 
@@ -60,9 +63,11 @@ export default function App() {
             <Route path="/admin/solutions" element={<AdminSolutions />} />
             <Route path="/admin/solutions/:solutionId" element={<AdminSolutionDetail />} />
           </Route>
+        </Route>
 
-        </Routes>
-      </Layout>
+        <Route path="*" element={<NotFound />} />
+
+      </Routes>
     </AuthProvider>
   );
 }
