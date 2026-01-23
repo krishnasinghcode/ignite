@@ -103,4 +103,20 @@ const ProblemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+ProblemSchema.index(
+  {
+    title: "text",
+    summary: "text",
+    tags: "text",
+  },
+  {
+    weights: {
+      title: 10,
+      tags: 5,
+      summary: 2,
+    },
+    name: "ProblemTextIndex",
+  }
+);
+
 export default mongoose.model("Problem", ProblemSchema);

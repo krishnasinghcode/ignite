@@ -61,20 +61,28 @@ export async function createProblem(req, res, next) {
  */
 export async function getAllProblems(req, res, next) {
   try {
-    const { tags, domain, difficulty } = req.query;
+    const { q, tags, domain, difficulty } = req.query;
 
     const filter = {
       status: "PUBLISHED",
       deletedAt: null
     };
 
-    if (tags) filter.tags = { $in: tags.split(",").map(t => t.trim()) };
     if (domain) filter.domain = domain;
     if (difficulty) filter.difficulty = difficulty;
 
+    if (tags) {
+      filter.tags = { $in: tags.split(",").map(t => t.trim()) };
+    }
+
+    if (q) {
+      filter.$text = { $search: q };
+    }
+
     const problems = await Problem.find(filter)
       .select("title slug summary domain difficulty tags createdAt")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(50);
 
     res.json(problems);
   } catch (err) {

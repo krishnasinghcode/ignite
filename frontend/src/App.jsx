@@ -31,6 +31,9 @@ export default function App() {
       <Routes>
 
         <Route element={<Layout />}>
+          
+          <Route path="/problems" element={<Problems />} />
+          <Route path="/problems/:slug" element={<ProblemDetail />} />
 
           {/* Public Routes */}
 
@@ -38,8 +41,6 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/problems" element={<Problems />} />
-            <Route path="/problems/:slug" element={<ProblemDetail />} />
           </Route>
 
           {/* Protected routes */}
