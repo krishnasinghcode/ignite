@@ -16,6 +16,18 @@ const SolutionSchema = new mongoose.Schema(
       index: true
     },
 
+    upvotes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        index: true // Indexing this helps if you query "solutions I liked"
+      }
+    ],
+    upvoteCount: {
+      type: Number,
+      default: 0
+    },
+
     repositoryUrl: {
       type: String,
       required: true

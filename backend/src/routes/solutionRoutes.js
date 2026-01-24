@@ -5,19 +5,21 @@ import {
   getSolutionsByProblem,
   getSolutionById,
   updateSolution,
-  deleteSolution
+  deleteSolution,
+  toggleUpvote
 } from "../controllers/solutionController.js";
 
 import {
   authenticateUser,
-  requireVerifiedAccount
+  requireVerifiedAccount,
+  extractUserOptional
 } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 // Public (approved only – enforce in controller)
-router.get("/problem/:problemId", getSolutionsByProblem);
-router.get("/:solutionId", getSolutionById);
+router.get("/problem/:problemId", extractUserOptional, getSolutionsByProblem);
+router.get("/:solutionId", extractUserOptional, getSolutionById);
 
 // User
 router.post(
@@ -45,5 +47,10 @@ router.get(
   authenticateUser,
   getSolutionsByUser
 );
+
+router.post(
+  "/:solutionId/upvote",
+  authenticateUser,
+  toggleUpvote);
 
 export default router;

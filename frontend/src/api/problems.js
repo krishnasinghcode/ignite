@@ -21,7 +21,8 @@ export const ProblemAPI = {
 
   // Get problem by ID (owner-only preview)
   getProblemById: async (id) => {
-    const res = await api.get(`/problems/${id}/by-id`);
+    const res = await api.get(`/problems/by-id/${id}`);
+    console.log(res.data);
     return res.data;
   },
 

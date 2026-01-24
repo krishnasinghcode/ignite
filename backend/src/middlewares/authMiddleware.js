@@ -59,3 +59,31 @@ export const requireOwnership = (resourceUserIdField = "createdBy") => {
     next();
   };
 };
+
+export const extractUserOptional = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    // If there is no token, just move on! Guest user is fine.
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return next(); 
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.ACCESS_SECRET);
+
+    const user = await User.findById(decoded.id)
+      .select("_id name email role isAccountVerified");
+
+    // If token was provided but user doesn't exist, we still just move on
+    if (user) {
+      req.user = user;
+    }
+    
+    next();
+  } catch (error) {
+    // If token is expired or invalid, we don't block the request,
+    // we just treat them as a guest.
+    next();
+  }
+};

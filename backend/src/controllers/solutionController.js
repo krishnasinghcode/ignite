@@ -1,6 +1,89 @@
 import Solution from "../models/solutionModel.js";
 
 /**
+ * Helper to format solution object and add hasLiked attribute
+ */
+const formatSolution = (solution, currentUserId) => {
+  const solObj = solution.toObject();
+  return {
+    ...solObj,
+    hasLiked: currentUserId ? solution.upvotes.some(id => id.toString() === currentUserId) : false,
+    upvotes: undefined // Hide array of IDs for privacy/bandwidth
+  };
+};
+
+/**
+ * Get a single public solution by ID
+ * Includes hasLiked status
+ */
+export async function getSolutionById(req, res, next) {
+  try {
+    const currentUserId = req.user?.id;
+    const solution = await Solution.findById(req.params.solutionId)
+      .populate("userId", "name")
+      .populate("problemId", "title slug");
+
+    if (!solution) {
+      return res.status(404).json({ message: "Solution not found" });
+    }
+
+    const isOwner = req.user && solution.userId._id.toString() === req.user.id;
+    
+    if (!solution.isPublic && !isOwner) {
+      return res.status(403).json({ message: "Access denied to private solution" });
+    }
+
+    res.json(formatSolution(solution, currentUserId));
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get all public solutions for a specific problem
+ * Sorted by upvotes and includes hasLiked status
+ */
+export async function getSolutionsByProblem(req, res, next) {
+  try {
+    const { problemId } = req.params;
+    const currentUserId = req.user?.id;
+
+    const solutions = await Solution.find({
+      problemId: problemId,
+      isPublic: true,
+      status: "APPROVED"
+    })
+    .populate("userId", "name")
+    .sort({ upvoteCount: -1, createdAt: -1 });
+
+    const results = solutions.map(sol => formatSolution(sol, currentUserId));
+
+    res.json(results);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get all public solutions submitted by a specific user
+ */
+export async function getSolutionsByUser(req, res, next) {
+  try {
+    const currentUserId = req.user?.id;
+    const solutions = await Solution.find({
+      userId: req.params.userId,
+      isPublic: true
+    }).populate("problemId", "title slug");
+
+    const results = solutions.map(sol => formatSolution(sol, currentUserId));
+
+    res.json(results);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * Submit a solution for a problem
  * - User can optionally choose if solution is public (default: true)
  * - Enforces 1 solution per user per problem via schema index
@@ -37,41 +120,6 @@ export async function submitSolution(req, res, next) {
 }
 
 /**
- * Get all public solutions submitted by a specific user
- * - Only returns solutions with isPublic: true
- */
-export async function getSolutionsByUser(req, res, next) {
-  try {
-    const solutions = await Solution.find({
-      userId: req.params.userId,
-      isPublic: true
-    }).populate("problemId", "title slug"); // populate problem title & slug
-
-    res.json(solutions);
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * Get all public solutions for a specific problem
- * - Only returns solutions with isPublic: true
- */
-export async function getSolutionsByProblem(req, res, next) {
-  try {
-    const solutions = await Solution.find({
-      problemId: req.params.problemId,
-      isPublic: true,
-      status: "APPROVED"
-    }).populate("userId", "name"); // populate user name
-
-    res.json(solutions);
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
  * Optional: Toggle solution visibility (Admin or owner only)
  * - Can be used later to make solution private/public
  */
@@ -92,32 +140,6 @@ export async function toggleSolutionVisibility(req, res, next) {
     await solution.save();
 
     res.json({ message: "Visibility updated", isPublic: solution.isPublic });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * Get a single public solution by ID
- */
-export async function getSolutionById(req, res, next) {
-  try {
-    const solution = await Solution.findById(req.params.solutionId)
-      .populate("userId", "name")
-      .populate("problemId", "title slug");
-
-    if (!solution) {
-      return res.status(404).json({ message: "Solution not found" });
-    }
-
-    // Allow access if: 1. It is public OR 2. The logged-in user is the owner
-    const isOwner = req.user && solution.userId._id.toString() === req.user.id;
-    
-    if (!solution.isPublic && !isOwner) {
-      return res.status(403).json({ message: "Access denied to private solution" });
-    }
-
-    res.json(solution);
   } catch (err) {
     next(err);
   }
@@ -183,6 +205,40 @@ export async function deleteSolution(req, res, next) {
 
     await solution.deleteOne();
     res.json({ message: "Solution deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Toggle Upvote for a Solution
+ */
+export async function toggleUpvote(req, res, next) {
+  try {
+    const { solutionId } = req.params;
+    const userId = req.user.id;
+
+    const solution = await Solution.findById(solutionId);
+    if (!solution) return res.status(404).json({ message: "Solution not found" });
+
+    // Check if user already upvoted
+    const hasUpvoted = solution.upvotes.includes(userId);
+
+    if (hasUpvoted) {
+      // UNLIKE: Remove user from array and decrement count
+      await Solution.findByIdAndUpdate(solutionId, {
+        $pull: { upvotes: userId },
+        $inc: { upvoteCount: -1 }
+      });
+      return res.json({ message: "Upvote removed", upvoted: false });
+    } else {
+      // LIKE: Add user to array and increment count
+      await Solution.findByIdAndUpdate(solutionId, {
+        $addToSet: { upvotes: userId }, // $addToSet prevents duplicates at DB level
+        $inc: { upvoteCount: 1 }
+      });
+      return res.json({ message: "Solution upvoted", upvoted: true });
+    }
   } catch (err) {
     next(err);
   }

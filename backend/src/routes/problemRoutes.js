@@ -13,32 +13,11 @@ import {
 import {
   authenticateUser,
   requireRole,
-  requireVerifiedAccount
+  requireVerifiedAccount,
+  extractUserOptional
 } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
-
-/**
- * PUBLIC ROUTES
- */
-
-// Get all published problems
-router.get("/", getAllProblems);
-
-// Get single published problem by slug (KEEP THIS LAST among public routes)
-router.get("/:slug", getProblemBySlug);
-
-/**
- * AUTHENTICATED USER ROUTES
- */
-
-// Create a new problem
-router.post(
-  "/",
-  authenticateUser,
-  requireVerifiedAccount,
-  createProblem
-);
 
 // Get all problems of logged-in user
 router.get(
@@ -46,6 +25,20 @@ router.get(
   authenticateUser,
   requireVerifiedAccount,
   getMyProblems
+);
+
+// Get all published problems
+router.get("/", extractUserOptional, getAllProblems);
+
+// Get single published problem by slug (KEEP THIS LAST among public routes)
+router.get("/:slug", extractUserOptional, getProblemBySlug);
+
+// Create a new problem
+router.post(
+  "/",
+  authenticateUser,
+  requireVerifiedAccount,
+  createProblem
 );
 
 // Get problem by ID (author-only preview)
