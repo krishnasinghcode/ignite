@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const ProblemSchema = new mongoose.Schema(
   {
+    // -------- Core identity --------
     title: {
       type: String,
       required: true,
@@ -21,54 +22,41 @@ const ProblemSchema = new mongoose.Schema(
       maxlength: 300
     },
 
-    description: {
-      type: String,
+    // -------- Flexible author content --------
+    content: {
+      type: String, // Markdown
       required: true
     },
 
-    context: {
-      type: String
+    // -------- Taxonomy (validated via Metadata) --------
+    category: {
+      type: String, // e.g. WEB, BLOCKCHAIN
+      required: true,
+      uppercase: true,
+      index: true
     },
 
-    objectives: [
-      {
-        type: String
-      }
-    ],
-
-    constraints: [
-      {
-        type: String
-      }
-    ],
-
-    assumptions: [
-      {
-        type: String
-      }
-    ],
-
-    domain: {
-      type: String,
-      enum: ["Web", "Backend", "AI", "Systems"],
+    problemType: {
+      type: String, // e.g. PROJECT, HACKATHON
+      required: true,
+      uppercase: true,
       index: true
     },
 
     difficulty: {
       type: String,
-      enum: ["Easy", "Medium", "Hard"],
+      enum: ["EASY", "MEDIUM", "HARD"],
+      required: true,
       index: true
     },
 
+    // -------- Discovery --------
     tags: {
       type: [String],
       index: true
     },
 
-    expectedDeliverables: [String],
-
-    evaluationCriteria: [String],
-
+    // -------- Moderation --------
     status: {
       type: String,
       enum: [
@@ -82,18 +70,19 @@ const ProblemSchema = new mongoose.Schema(
       index: true
     },
 
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true
+    },
+
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     },
     reviewedAt: Date,
     rejectionReason: String,
-
-
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    },
 
     deletedAt: {
       type: Date,
@@ -103,19 +92,21 @@ const ProblemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Full-text search
 ProblemSchema.index(
   {
     title: "text",
     summary: "text",
-    tags: "text",
+    content: "text",
+    tags: "text"
   },
   {
     weights: {
       title: 10,
       tags: 5,
-      summary: 2,
-    },
-    name: "ProblemTextIndex",
+      summary: 3,
+      content: 2
+    }
   }
 );
 

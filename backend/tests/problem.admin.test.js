@@ -13,10 +13,24 @@ describe("Problem (Admin)", () => {
       title: "Cache Design",
       slug: "cache-design",
       summary: "Design cache",
-      description: "Details",
+
+      content: `
+## Context
+Design an in-memory and distributed cache.
+
+## Constraints
+- Low latency
+- High availability
+`,
+
+      category: "SYSTEMS",
+      problemType: "PROJECT",
+      difficulty: "MEDIUM",
+
       createdBy: user._id,
       status: "PENDING_REVIEW"
     });
+
 
     const res = await request(app)
       .patch(`/api/admin/problems/${problem._id}/review`)

@@ -1,5 +1,6 @@
 import Problem from "../models/problemModel.js";
 import { generateUniqueSlug } from "../services/slug.js";
+import { validateMetadata } from "../services/metadataValidator.js";
 
 /**
  * Create a new problem
@@ -11,41 +12,36 @@ export async function createProblem(req, res, next) {
     const {
       title,
       summary,
-      description,
-      context,
-      objectives = [],
-      constraints = [],
-      assumptions = [],
-      domain,
-      difficulty,
+      content,
+      category,
+      problemType,
+      difficulty = "EASY",
       tags = [],
-      expectedDeliverables = [],
-      evaluationCriteria = [],
-      status = "DRAFT" // default draft
+      status = "DRAFT"
     } = req.body;
 
-    // Validate required fields
-    if (!title || !summary || !description) {
-      return res.status(400).json({ message: "Title, summary, and description are required." });
+    if (!title || !summary || !content || !category || !problemType) {
+      return res.status(400).json({
+        message: "Title, summary, content, category, and problemType are required."
+      });
     }
 
-    // Generate unique slug
+    await validateMetadata({
+      category: category.toUpperCase(),
+      problemType: problemType.toUpperCase()
+    });
+
     const slug = await generateUniqueSlug(title);
 
     const problem = await Problem.create({
       title,
       slug,
       summary,
-      description,
-      context: context || "",
-      objectives,
-      constraints,
-      assumptions,
-      domain: domain || "Web",
-      difficulty: difficulty || "Easy",
+      content,
+      category: category.toUpperCase(),
+      problemType: problemType.toUpperCase(),
+      difficulty: difficulty.toUpperCase(),
       tags,
-      expectedDeliverables,
-      evaluationCriteria,
       status,
       createdBy: req.user.id
     });
@@ -61,26 +57,18 @@ export async function createProblem(req, res, next) {
  */
 export async function getAllProblems(req, res, next) {
   try {
-    const { q, tags, domain, difficulty } = req.query;
+    const { q, tags, category, problemType, difficulty } = req.query;
 
-    const filter = {
-      status: "PUBLISHED",
-      deletedAt: null
-    };
+    const filter = { status: "PUBLISHED", deletedAt: null };
 
-    if (domain) filter.domain = domain;
-    if (difficulty) filter.difficulty = difficulty;
-
-    if (tags) {
-      filter.tags = { $in: tags.split(",").map(t => t.trim()) };
-    }
-
-    if (q) {
-      filter.$text = { $search: q };
-    }
+    if (category) filter.category = category.toUpperCase();
+    if (problemType) filter.problemType = problemType.toUpperCase();
+    if (difficulty) filter.difficulty = difficulty.toUpperCase();
+    if (tags) filter.tags = { $in: tags.split(",").map(t => t.trim()) };
+    if (q) filter.$text = { $search: q };
 
     const problems = await Problem.find(filter)
-      .select("title slug summary domain difficulty tags createdAt")
+      .select("title slug summary category problemType difficulty tags createdAt")
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -116,7 +104,6 @@ export async function getProblemBySlug(req, res, next) {
 export async function updateProblem(req, res, next) {
   try {
     const problem = await Problem.findById(req.params.id);
-
     if (!problem) return res.status(404).json({ message: "Problem not found" });
 
     if (problem.createdBy.toString() !== req.user.id) {
@@ -127,14 +114,33 @@ export async function updateProblem(req, res, next) {
       return res.status(403).json({ message: "Problem cannot be edited in current state" });
     }
 
+    // Validate category/problemType if provided
+    if (req.body.category) {
+      const categoryMeta = await Metadata.findOne({ type: "CATEGORY", key: req.body.category.toUpperCase(), isActive: true });
+      if (!categoryMeta) return res.status(400).json({ message: `Invalid category: ${req.body.category}` });
+      problem.category = req.body.category.toUpperCase();
+    }
+
+    if (req.body.problemType) {
+      const problemTypeMeta = await Metadata.findOne({ type: "PROBLEM_TYPE", key: req.body.problemType.toUpperCase(), isActive: true });
+      if (!problemTypeMeta) return res.status(400).json({ message: `Invalid problem type: ${req.body.problemType}` });
+      problem.problemType = req.body.problemType.toUpperCase();
+    }
+
     // Regenerate slug if title changes
     if (req.body.title && req.body.title !== problem.title) {
       problem.slug = await generateUniqueSlug(req.body.title);
+      problem.title = req.body.title;
     }
 
-    Object.assign(problem, req.body);
-    await problem.save();
+    // Update other fields
+    ["summary", "content", "difficulty", "tags", "status"].forEach(field => {
+      if (req.body[field] !== undefined) {
+        problem[field] = field === "difficulty" ? req.body[field].toUpperCase() : req.body[field];
+      }
+    });
 
+    await problem.save();
     res.json(problem);
   } catch (err) {
     next(err);
@@ -147,15 +153,12 @@ export async function updateProblem(req, res, next) {
 export async function deleteProblem(req, res, next) {
   try {
     const problem = await Problem.findById(req.params.id);
-
     if (!problem) return res.status(404).json({ message: "Problem not found" });
 
-    if (problem.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+    if (problem.createdBy.toString() !== req.user.id) return res.status(403).json({ message: "Forbidden" });
 
     problem.deletedAt = new Date();
-    problem.status = "DRAFT"; // reset to draft on delete
+    problem.status = "DRAFT";
     await problem.save();
 
     res.json({ message: "Problem deleted successfully" });
@@ -170,12 +173,9 @@ export async function deleteProblem(req, res, next) {
 export async function submitProblemForReview(req, res, next) {
   try {
     const problem = await Problem.findById(req.params.problemId);
-
     if (!problem) return res.status(404).json({ message: "Problem not found" });
 
-    if (problem.status !== "DRAFT") {
-      return res.status(400).json({ message: "Only draft problems can be submitted for review" });
-    }
+    if (problem.status !== "DRAFT") return res.status(400).json({ message: "Only draft problems can be submitted for review" });
 
     problem.status = "PENDING_REVIEW";
     await problem.save();
@@ -188,12 +188,11 @@ export async function submitProblemForReview(req, res, next) {
 
 /**
  * Get all problems created by the logged-in user
- * Returns all statuses; filtering/sorting can be done in frontend
  */
 export async function getMyProblems(req, res, next) {
   try {
     const problems = await Problem.find({ createdBy: req.user.id, deletedAt: null })
-      .sort({ createdAt: -1 }); // newest first
+      .sort({ createdAt: -1 });
 
     res.json(problems);
   } catch (err) {
@@ -201,19 +200,15 @@ export async function getMyProblems(req, res, next) {
   }
 }
 
-// Get single problem by ID (author-only preview)
+/**
+ * Get single problem by ID (author-only preview)
+ */
 export async function getProblemById(req, res, next) {
   try {
     const problem = await Problem.findById(req.params.id);
+    if (!problem) return res.status(404).json({ message: "Problem not found" });
 
-    if (!problem) {
-      return res.status(404).json({ message: "Problem not found" });
-    }
-
-    // Only the author can preview their draft/rejected/pending problems
-    if (problem.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+    if (problem.createdBy.toString() !== req.user.id) return res.status(403).json({ message: "Forbidden" });
 
     res.json(problem);
   } catch (err) {

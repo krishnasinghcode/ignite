@@ -16,18 +16,6 @@ const SolutionSchema = new mongoose.Schema(
       index: true
     },
 
-    upvotes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        index: true // Indexing this helps if you query "solutions I liked"
-      }
-    ],
-    upvoteCount: {
-      type: Number,
-      default: 0
-    },
-
     repositoryUrl: {
       type: String,
       required: true
@@ -37,17 +25,15 @@ const SolutionSchema = new mongoose.Schema(
       type: String
     },
 
-    writeup: {
-      understanding: String,
-      approach: String,
-      architecture: String,
-      tradeoffs: String,
-      limitations: String,
-      outcome: String
-    },
-
     techStack: [String],
 
+    // -------- Flexible user content (Markdown) --------
+    content: {
+      type: String,
+      required: true
+    },
+
+    // -------- Discovery / moderation --------
     status: {
       type: String,
       enum: ["SUBMITTED", "APPROVED", "REJECTED"],
@@ -65,6 +51,18 @@ const SolutionSchema = new mongoose.Schema(
     isPublic: {
       type: Boolean,
       default: true
+    },
+
+    upvotes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        index: true
+      }
+    ],
+    upvoteCount: {
+      type: Number,
+      default: 0
     }
 
   },
