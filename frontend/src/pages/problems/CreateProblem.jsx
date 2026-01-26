@@ -5,15 +5,10 @@ import { ProblemAPI } from "@/api/problems";
 export default function CreateProblem() {
   const navigate = useNavigate();
 
-  const handleCreate = async (formData, submitType) => {
-    const payload = {
-      ...formData,
-      status: submitType === "review" ? "PENDING_REVIEW" : "DRAFT",
-    };
-
+  const handleCreate = async (payload) => {
     const problem = await ProblemAPI.createProblem(payload);
 
-    if (submitType === "review") {
+    if (payload.status === "PENDING_REVIEW") {
       alert("Problem submitted for review");
       navigate(`/problems/${problem.slug}`);
     } else {

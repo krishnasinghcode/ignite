@@ -1,91 +1,67 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ProblemAPI } from "@/api/problems";
 import { Button } from "@/components/ui/button";
+import ProblemCard from "@/components/problems/ProblemCard"; // Import reusable card
 
 export default function MyProblems() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchProblems = async () => {
     try {
       const data = await ProblemAPI.getMyProblems();
-
-      const statusOrder = [
-        "DRAFT",
-        "PENDING_REVIEW",
-        "APPROVED",
-        "PUBLISHED",
-        "REJECTED",
-      ];
-
-      const sorted = [...data].sort(
-        (a, b) =>
-          statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
-      );
-
+      const statusOrder = ["DRAFT", "PENDING_REVIEW", "APPROVED", "PUBLISHED", "REJECTED"];
+      const sorted = [...data].sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
       setProblems(sorted);
     } catch (error) {
       console.error(error);
-      alert("Failed to load your problems");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchProblems();
-  }, []);
+  useEffect(() => { fetchProblems(); }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="p-10 text-center animate-pulse">Loading your challenges...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">My Problems</h1>
-        <Button asChild variant="default">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">My Problems</h1>
+        <Button asChild>
           <Link to="/problems/create">Create Problem</Link>
         </Button>
       </div>
 
       {problems.length === 0 ? (
-        <p>No problems yet. Start by creating one.</p>
+        <div className="text-center py-20 border rounded-xl bg-muted/20">
+          <p className="text-muted-foreground">No problems yet. Start by creating one.</p>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-4">
           {problems.map((p) => {
-            const viewLink =
-              p.status === "PUBLISHED"
-                ? `/problems/${p.slug}` // public page
-                : `/problems/${p._id}/preview`; // owner preview
-
+            const viewLink = p.status === "PUBLISHED" ? `/problems/${p.slug}` : `/problems/${p._id}/preview`;
+            
             return (
-              <div
-                key={p._id}
-                className="border p-4 rounded flex justify-between items-center"
+              <ProblemCard 
+                key={p._id} 
+                problem={p} 
+                onClick={() => navigate(viewLink)}
               >
-                <div>
-                  <h2 className="font-semibold">{p.title}</h2>
-                  <p className="text-sm text-gray-500">
-                    Status: {p.status} · Domain: {p.domain} · Difficulty:{" "}
-                    {p.difficulty}
-                  </p>
-                </div>
-
-                {/* ACTIONS */}
-                <div className="flex gap-2">
-                  {/* View → either public or owner preview */}
-                  <Button asChild variant="outline" size="sm">
-                    <Link to={viewLink}>View</Link>
-                  </Button>
-
-                  {/* Edit → only for editable states */}
-                  {(p.status === "DRAFT" || p.status === "REJECTED") && (
+                {/* Specific Actions for MyProblems page */}
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                   {(p.status === "DRAFT" || p.status === "REJECTED") && (
                     <Button asChild variant="outline" size="sm">
                       <Link to={`/problems/edit/${p._id}`}>Edit</Link>
                     </Button>
                   )}
+                  <Button asChild variant="secondary" size="sm">
+                    <Link to={viewLink}>View</Link>
+                  </Button>
                 </div>
-              </div>
+              </ProblemCard>
             );
           })}
         </div>

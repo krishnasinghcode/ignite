@@ -24,14 +24,12 @@ export const SolutionAPI = {
   // Get all solutions for a specific problem (e.g., for a "Leaderboard" or "Community" tab)
   getSolutionsByProblem: async (problemId) => {
     const res = await api.get(`/solutions/problem/${problemId}`);
-    console.log(res.data);
     return res.data;
   },
 
   // Get all solutions for a specific user (for their Profile page)
   getSolutionsByUser: async (userId) => {
     const res = await api.get(`/solutions/user/${userId}`);
-    console.log(res.data);
     return res.data;
   },
 
@@ -44,7 +42,6 @@ export const SolutionAPI = {
   // Upvote an solution
   toggleUpvote: async (solutionId) => {
     const res = await api.post(`/solutions/${solutionId}/upvote`);
-    console.log(res.data);
     return res.data;
   },
 };

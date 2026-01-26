@@ -12,17 +12,16 @@ export const ProblemAPI = {
     const res = await api.get("/problems", { params });
     return res.data;
   },
-
+  
   // Get single problem by slug (public)
   getProblemBySlug: async (slug) => {
     const res = await api.get(`/problems/${slug}`);
     return res.data;
   },
-
+  
   // Get problem by ID (owner-only preview)
   getProblemById: async (id) => {
     const res = await api.get(`/problems/by-id/${id}`);
-    console.log(res.data);
     return res.data;
   },
 

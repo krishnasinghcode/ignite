@@ -17,8 +17,8 @@ export default function EditProblem() {
 
   const editable = ["DRAFT", "REJECTED"].includes(problem.status);
 
-  const handleUpdate = async (formData) => {
-    await ProblemAPI.updateProblem(id, formData);
+  const handleUpdate = async (payload) => {
+    await ProblemAPI.updateProblem(id, payload);
     alert("Problem updated");
     navigate("/my-problems");
   };
@@ -36,6 +36,7 @@ export default function EditProblem() {
         initialData={problem}
         onSubmit={handleUpdate}
         disabled={!editable}
+        showSubmitForReview={editable}
       />
 
       {editable && (

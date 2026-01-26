@@ -3,56 +3,90 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import ArrayInput from "../ArrayInput";
+import { MetadataAPI } from "@/api/metadata";
 
 const EMPTY_FORM = {
   title: "",
   summary: "",
-  description: "",
-  context: "",
-  objectives: [],
-  constraints: [],
-  assumptions: [],
-  domain: "Web",
-  difficulty: "Easy",
+  content: "",
+  category: "",
+  problemType: "",
+  difficulty: "EASY",
   tags: [],
-  expectedDeliverables: [],
-  evaluationCriteria: [],
 };
 
-export default function ProblemForm({ mode, initialData, onSubmit, disabled = false, showSubmitForReview = true }) {
+export default function ProblemForm({
+  mode,
+  initialData,
+  onSubmit,
+  disabled = false,
+  showSubmitForReview = true,
+}) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [meta, setMeta] = useState({
+    categories: [],
+    problemTypes: [],
+  });
   const [loading, setLoading] = useState(false);
 
+  /* -------------------- Load Metadata -------------------- */
+  useEffect(() => {
+    const loadMetadata = async () => {
+      const data = await MetadataAPI.getAll();
+
+      setMeta({
+        categories: data.filter(m => m.type === "CATEGORY"),
+        problemTypes: data.filter(m => m.type === "PROBLEM_TYPE"),
+      });
+    };
+
+    loadMetadata();
+  }, []);
+
+  /* -------------------- Edit Mode Sync -------------------- */
   useEffect(() => {
     if (mode === "edit" && initialData) {
-      setForm({
-        ...EMPTY_FORM,
-        ...initialData,
-      });
+      setForm({ ...EMPTY_FORM, ...initialData });
     }
   }, [mode, initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    setForm(p => ({ ...p, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const submit = async (action) => {
     setLoading(true);
-    await onSubmit(form);
+
+    await onSubmit({
+      ...form,
+      category: form.category.toUpperCase(),
+      problemType: form.problemType.toUpperCase(),
+      difficulty: form.difficulty.toUpperCase(),
+      status: action === "review" ? "PENDING_REVIEW" : "DRAFT",
+    });
+
     setLoading(false);
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{mode === "create" ? "Create Problem" : "Edit Problem"}</CardTitle>
+        <CardTitle>
+          {mode === "create" ? "Create Problem" : "Edit Problem"}
+        </CardTitle>
       </CardHeader>
+
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form className="space-y-6">
           <Input
             name="title"
             value={form.title}
@@ -66,122 +100,83 @@ export default function ProblemForm({ mode, initialData, onSubmit, disabled = fa
             name="summary"
             value={form.summary}
             onChange={handleChange}
-            placeholder="Short summary (max 300 chars)"
-            disabled={disabled}
+            placeholder="Short summary (max 300 characters)"
             maxLength={300}
             required
           />
 
           <Textarea
-            name="description"
-            value={form.description}
+            name="content"
+            value={form.content}
             onChange={handleChange}
-            placeholder="Detailed problem description"
-            disabled={disabled}
-            minH="160px"
+            placeholder="Write the full problem statement in Markdown..."
+            className="min-h-[220px]"
             required
           />
 
-          <Textarea
-            name="context"
-            value={form.context}
-            onChange={handleChange}
-            placeholder="Context / background (optional)"
-            disabled={disabled}
-          />
-
-          <ArrayInput
-            label="Objectives"
-            values={form.objectives}
-            onChange={(v) => setForm((p) => ({ ...p, objectives: v }))}
-            disabled={disabled}
-          />
-
-          <ArrayInput
-            label="Constraints"
-            values={form.constraints}
-            onChange={(v) => setForm((p) => ({ ...p, constraints: v }))}
-            disabled={disabled}
-          />
-
-          <ArrayInput
-            label="Assumptions"
-            values={form.assumptions}
-            onChange={(v) => setForm((p) => ({ ...p, assumptions: v }))}
-            disabled={disabled}
-          />
-
-          <div className="flex gap-4">
+          {/* Category + Type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
-              value={form.domain}
-              onValueChange={(value) => setForm((p) => ({ ...p, domain: value }))}
-              disabled={disabled}
+              value={form.category}
+              onValueChange={(v) => setForm(p => ({ ...p, category: v }))}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Domain" />
+              <SelectTrigger>
+                <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Web">Web</SelectItem>
-                <SelectItem value="Backend">Backend</SelectItem>
-                <SelectItem value="AI">AI</SelectItem>
-                <SelectItem value="Systems">Systems</SelectItem>
+                {meta.categories.map(c => (
+                  <SelectItem key={c.key} value={c.key}>
+                    {c.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
             <Select
-              value={form.difficulty}
-              onValueChange={(value) => setForm((p) => ({ ...p, difficulty: value }))}
-              disabled={disabled}
+              value={form.problemType}
+              onValueChange={(v) => setForm(p => ({ ...p, problemType: v }))}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Difficulty" />
+              <SelectTrigger>
+                <SelectValue placeholder="Problem Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Easy">Easy</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="Hard">Hard</SelectItem>
+                {meta.problemTypes.map(p => (
+                  <SelectItem key={p.key} value={p.key}>
+                    {p.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* Difficulty */}
+          <Select
+            value={form.difficulty}
+            onValueChange={(v) => setForm(p => ({ ...p, difficulty: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="EASY">Easy</SelectItem>
+              <SelectItem value="MEDIUM">Medium</SelectItem>
+              <SelectItem value="HARD">Hard</SelectItem>
+            </SelectContent>
+          </Select>
+
           <ArrayInput
             label="Tags"
             values={form.tags}
-            onChange={(v) => setForm((p) => ({ ...p, tags: v }))}
-            disabled={disabled}
-          />
-
-          <ArrayInput
-            label="Expected Deliverables"
-            values={form.expectedDeliverables}
-            onChange={(v) => setForm((p) => ({ ...p, expectedDeliverables: v }))}
-            disabled={disabled}
-          />
-
-          <ArrayInput
-            label="Evaluation Criteria"
-            values={form.evaluationCriteria}
-            onChange={(v) => setForm((p) => ({ ...p, evaluationCriteria: v }))}
-            disabled={disabled}
+            onChange={(v) => setForm(p => ({ ...p, tags: v }))}
           />
 
           <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={() => onSubmit(form, "draft")}
-              disabled={loading || disabled}
-              className="flex-1"
-            >
+            <Button type="button" onClick={() => submit("draft")} className="flex-1">
               Save Draft
             </Button>
 
             {showSubmitForReview && (
-              <Button
-                type="button"
-                onClick={() => onSubmit(form, "review")}
-                disabled={loading || disabled}
-                className="flex-1"
-              >
+              <Button type="button" onClick={() => submit("review")} className="flex-1">
                 Submit for Review
               </Button>
             )}

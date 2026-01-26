@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ProblemAPI } from "@/api/problems";
 import { SolutionAPI } from "@/api/solutions";
-import SolutionForm from "@/components/solutions/SolutionForm"; // Import the new reusable form
+import SolutionForm from "@/components/solutions/SolutionForm";
 
 export default function SubmitSolution() {
   const { slug } = useParams();
@@ -18,13 +18,14 @@ export default function SubmitSolution() {
       .catch(() => setError("Could not load problem details."));
   }, [slug]);
 
-  const handleSubmit = async (formattedData) => {
-    if (!problem?._id) return; // Guard clause
+  const handleSubmit = async (data) => {
+    if (!problem?._id) return;
+
     setLoading(true);
     try {
       await SolutionAPI.submitSolution({
         problemId: problem._id,
-        ...formattedData
+        ...data,
       });
       navigate(`/problems/${slug}`);
     } catch (err) {
@@ -41,14 +42,12 @@ export default function SubmitSolution() {
     <div className="max-w-3xl mx-auto p-4">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Submit Solution</h1>
-        <p className="text-gray-600">Problem: <span className="font-medium text-primary">{problem.title}</span></p>
+        <p className="text-gray-600">
+          Problem: <span className="font-medium text-primary">{problem.title}</span>
+        </p>
       </div>
 
-      {/* Use the reusable form component */}
-      <SolutionForm
-        onSubmit={handleSubmit}
-        loading={loading}
-      />
+      <SolutionForm onSubmit={handleSubmit} loading={loading} />
     </div>
   );
 }
