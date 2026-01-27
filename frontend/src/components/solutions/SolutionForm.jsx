@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import ArrayInput from "@/components/ArrayInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import MarkdownEditor from "@/components/MarkdownEditor";
+import { FileText } from "lucide-react";
 
 export default function SolutionForm({ initialData, onSubmit, loading }) {
   const [form, setForm] = useState({
@@ -11,26 +11,10 @@ export default function SolutionForm({ initialData, onSubmit, loading }) {
     liveDemoUrl: "",
     techStack: [],
     isPublic: true,
-    content: "", // user writes free Markdown
+    content: "",
   });
 
-  // Optional template content
-  const TEMPLATE = `
-## Understanding
-Describe your understanding of the problem...
-
-## Approach
-Explain your solution approach...
-
-## Tradeoffs
-List tradeoffs and decisions made...
-
-## Limitations
-List known limitations or edge cases...
-
-## Outcome
-Describe expected or actual outcome...
-`;
+  const TEMPLATE = `## Understanding\nDescribe your understanding of the problem...\n\n## Approach\nExplain your solution approach...\n\n## Tradeoffs\nList tradeoffs and decisions made...\n\n## Limitations\nList known limitations or edge cases...\n\n## Outcome\nDescribe expected or actual outcome...`;
 
   useEffect(() => {
     if (initialData) {
@@ -44,31 +28,35 @@ Describe expected or actual outcome...
     }
   }, [initialData]);
 
+  const applyTemplate = () => {
+    if (!form.content || confirm("Overwrite current content with template?")) {
+      setForm(p => ({ ...p, content: TEMPLATE }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
-      repositoryUrl: form.repositoryUrl,
-      liveDemoUrl: form.liveDemoUrl,
+      ...form,
       techStack: form.techStack.filter(Boolean),
-      isPublic: form.isPublic,
-      content: form.content, // user-written Markdown
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Input
-        value={form.repositoryUrl}
-        onChange={e => setForm(p => ({ ...p, repositoryUrl: e.target.value }))}
-        placeholder="Repository URL"
-        required
-      />
-
-      <Input
-        value={form.liveDemoUrl}
-        onChange={e => setForm(p => ({ ...p, liveDemoUrl: e.target.value }))}
-        placeholder="Live demo URL (optional)"
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          value={form.repositoryUrl}
+          onChange={e => setForm(p => ({ ...p, repositoryUrl: e.target.value }))}
+          placeholder="GitHub Repository URL"
+          required
+        />
+        <Input
+          value={form.liveDemoUrl}
+          onChange={e => setForm(p => ({ ...p, liveDemoUrl: e.target.value }))}
+          placeholder="Live demo URL (optional)"
+        />
+      </div>
 
       <ArrayInput
         label="Tech Stack"
@@ -76,41 +64,42 @@ Describe expected or actual outcome...
         onChange={v => setForm(p => ({ ...p, techStack: v }))}
       />
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 px-1">
         <input
           type="checkbox"
+          id="isPublic"
+          className="rounded border-gray-300 text-primary focus:ring-primary"
           checked={form.isPublic}
           onChange={e => setForm(p => ({ ...p, isPublic: e.target.checked }))}
         />
-        <span>Make solution public</span>
+        <label htmlFor="isPublic" className="text-sm font-medium leading-none">
+          Make solution public
+        </label>
       </div>
 
-      {/* Markdown content area */}
-      <Textarea
-        value={form.content}
-        onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
-        placeholder="Write your solution in Markdown..."
-        className="min-h-[200px]"
-        required
-      />
-
-      {/* Button to show template example */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button type="button" variant="outline" className="w-full">
-            Show Markdown Template Example
+      <div className="space-y-2">
+        <div className="flex justify-end">
+          <Button 
+            type="button" 
+            variant="link" 
+            size="sm" 
+            onClick={applyTemplate}
+            className="text-xs text-muted-foreground gap-1"
+          >
+            <FileText className="h-3 w-3" /> Use Template
           </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Example Markdown Structure</DialogTitle>
-          </DialogHeader>
-          <pre className="whitespace-pre-wrap">{TEMPLATE}</pre>
-        </DialogContent>
-      </Dialog>
+        </div>
+        
+        {/* INTEGRATED MARKDOWN EDITOR */}
+        <MarkdownEditor
+          value={form.content}
+          onChange={(e) => setForm(p => ({ ...p, content: e.target.value }))}
+          placeholder="Write your solution implementation, architecture, and logic here..."
+        />
+      </div>
 
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Submitting..." : "Submit Solution"}
+        {loading ? "Submitting implementation..." : "Submit Solution"}
       </Button>
     </form>
   );

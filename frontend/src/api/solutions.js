@@ -17,7 +17,6 @@ export const SolutionAPI = {
   // Get a specific solution by ID (public or owned by user)
   getSolutionById: async (solutionId) => {
     const res = await api.get(`/solutions/${solutionId}`);
-    console.log(res.data);
     return res.data;
   },
 

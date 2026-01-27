@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import ArrayInput from "../ArrayInput";
 import { MetadataAPI } from "@/api/metadata";
+import MarkdownEditor from "@/components/MarkdownEditor";
 
 const EMPTY_FORM = {
   title: "",
@@ -37,21 +38,17 @@ export default function ProblemForm({
   });
   const [loading, setLoading] = useState(false);
 
-  /* -------------------- Load Metadata -------------------- */
   useEffect(() => {
     const loadMetadata = async () => {
       const data = await MetadataAPI.getAll();
-
       setMeta({
         categories: data.filter(m => m.type === "CATEGORY"),
         problemTypes: data.filter(m => m.type === "PROBLEM_TYPE"),
       });
     };
-
     loadMetadata();
   }, []);
 
-  /* -------------------- Edit Mode Sync -------------------- */
   useEffect(() => {
     if (mode === "edit" && initialData) {
       setForm({ ...EMPTY_FORM, ...initialData });
@@ -65,7 +62,6 @@ export default function ProblemForm({
 
   const submit = async (action) => {
     setLoading(true);
-
     await onSubmit({
       ...form,
       category: form.category.toUpperCase(),
@@ -73,7 +69,6 @@ export default function ProblemForm({
       difficulty: form.difficulty.toUpperCase(),
       status: action === "review" ? "PENDING_REVIEW" : "DRAFT",
     });
-
     setLoading(false);
   };
 
@@ -105,16 +100,13 @@ export default function ProblemForm({
             required
           />
 
-          <Textarea
-            name="content"
+          {/* INTEGRATED MARKDOWN EDITOR */}
+          <MarkdownEditor
             value={form.content}
-            onChange={handleChange}
+            onChange={(e) => setForm(p => ({ ...p, content: e.target.value }))}
             placeholder="Write the full problem statement in Markdown..."
-            className="min-h-[220px]"
-            required
           />
 
-          {/* Category + Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               value={form.category}
@@ -125,9 +117,7 @@ export default function ProblemForm({
               </SelectTrigger>
               <SelectContent>
                 {meta.categories.map(c => (
-                  <SelectItem key={c.key} value={c.key}>
-                    {c.label}
-                  </SelectItem>
+                  <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -141,15 +131,12 @@ export default function ProblemForm({
               </SelectTrigger>
               <SelectContent>
                 {meta.problemTypes.map(p => (
-                  <SelectItem key={p.key} value={p.key}>
-                    {p.label}
-                  </SelectItem>
+                  <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Difficulty */}
           <Select
             value={form.difficulty}
             onValueChange={(v) => setForm(p => ({ ...p, difficulty: v }))}
@@ -171,13 +158,12 @@ export default function ProblemForm({
           />
 
           <div className="flex gap-2">
-            <Button type="button" onClick={() => submit("draft")} className="flex-1">
+            <Button type="button" variant="outline" onClick={() => submit("draft")} className="flex-1" disabled={loading}>
               Save Draft
             </Button>
-
             {showSubmitForReview && (
-              <Button type="button" onClick={() => submit("review")} className="flex-1">
-                Submit for Review
+              <Button type="button" onClick={() => submit("review")} className="flex-1" disabled={loading}>
+                {loading ? "Processing..." : "Submit for Review"}
               </Button>
             )}
           </div>
