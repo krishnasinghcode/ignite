@@ -27,10 +27,10 @@ export const SolutionAPI = {
   },
 
   // Get all solutions for a specific user (for their Profile page)
-  getSolutionsByUser: async (userId) => {
-    const res = await api.get(`/solutions/user/${userId}`);
-    return res.data;
-  },
+  getSolutionsByUser: async (userId, query = {}) => {
+  const res = await api.get(`/solutions/user/${userId}`, { params: query });
+  return res.data;
+},
 
   // Delete a solution
   deleteSolution: async (solutionId) => {

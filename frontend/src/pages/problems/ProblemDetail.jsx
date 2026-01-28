@@ -11,7 +11,7 @@ import { ArrowLeft, Users, ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProblemDetail() {
-  const { slug, id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [problem, setProblem] = useState(null);
   const [solutions, setSolutions] = useState([]);
@@ -21,10 +21,10 @@ export default function ProblemDetail() {
     const fetchProblemAndSolutions = async () => {
       setLoading(true);
       try {
-        const resProblem = id ? await ProblemAPI.getProblemById(id) : await ProblemAPI.getProblemBySlug(slug);
+        const resProblem = await ProblemAPI.getProblemBySlug(slug);
         setProblem(resProblem);
 
-        if (resProblem.status === "PUBLISHED") {
+        if (resProblem && resProblem.status === "PUBLISHED") {
           const resSolutions = await SolutionAPI.getSolutionsByProblem(resProblem._id);
           setSolutions(resSolutions);
         }
@@ -35,7 +35,7 @@ export default function ProblemDetail() {
       }
     };
     fetchProblemAndSolutions();
-  }, [slug, id]);
+  }, [slug]);
 
   const handleUpvote = async (solutionId) => {
     try {

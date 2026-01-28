@@ -187,12 +187,23 @@ export async function submitProblemForReview(req, res, next) {
 }
 
 /**
- * Get all problems created by the logged-in user
+ * Get all problems created by the logged-in user (filtered by status)
  */
 export async function getMyProblems(req, res, next) {
   try {
-    const problems = await Problem.find({ createdBy: req.user.id, deletedAt: null })
-      .sort({ createdAt: -1 });
+    const { status } = req.query;
+
+    const query = {
+      createdBy: req.user.id,
+      deletedAt: null
+    };
+
+    // Allow single or multiple statuses
+    if (status) {
+      query.status = { $in: status.split(",") };
+    }
+
+    const problems = await Problem.find(query).sort({ createdAt: -1 });
 
     res.json(problems);
   } catch (err) {

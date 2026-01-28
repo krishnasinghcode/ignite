@@ -32,8 +32,10 @@ export const ProblemAPI = {
   },
 
   // Get all problems of logged-in user
-  getMyProblems: async () => {
-    const res = await api.get("/problems/my");
+  getMyProblems: async (status) => {
+    const res = await api.get("/problems/my", {
+      params: status ? { status } : {}
+    });
     return res.data;
   },
 

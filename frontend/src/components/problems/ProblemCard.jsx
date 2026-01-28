@@ -2,10 +2,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
-export default function ProblemCard({ problem, onClick }) {
+export default function ProblemCard({ problem, onClick, showEdit = false }) {
+  // Always go to details page
+  const viewLink = `/problems/${problem.slug}`;
+
   return (
-    <Card 
+    <Card
       className="group hover:border-primary/50 transition-all cursor-pointer"
       onClick={onClick}
     >
@@ -19,22 +23,35 @@ export default function ProblemCard({ problem, onClick }) {
               {problem.difficulty}
             </Badge>
           </div>
-          
+
           <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
             {problem.title}
           </h3>
-          
+
           <p className="text-sm text-muted-foreground line-clamp-1">
             {problem.summary}
           </p>
         </div>
 
-        <div className="flex items-center gap-4 w-full md:w-auto justify-between border-t md:border-none pt-3 md:pt-0">
-          <div className="text-xs text-muted-foreground">
-            {new Date(problem.createdAt).toLocaleDateString()}
-          </div>
-          <Button size="sm" variant="ghost" className="group-hover:translate-x-1 transition-transform">
-            View <ArrowRight className="ml-2 h-4 w-4" />
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+          {showEdit && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Link to={`/problems/edit/${problem._id}`}>Edit</Link>
+            </Button>
+          )}
+
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link to={viewLink}>View</Link>
           </Button>
         </div>
       </CardContent>

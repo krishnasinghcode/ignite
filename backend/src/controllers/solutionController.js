@@ -60,14 +60,25 @@ export async function getSolutionsByProblem(req, res, next) {
 
 /**
  * Get all public solutions by a specific user
+ * Optional query params: status (comma-separated)
  */
 export async function getSolutionsByUser(req, res, next) {
   try {
     const currentUserId = req.user?.id;
-    const solutions = await Solution.find({
+    const { status } = req.query; // e.g., "APPROVED,REJECTED"
+    const statuses = status ? status.split(",") : undefined;
+
+    const filter = {
       userId: req.params.userId,
-      isPublic: true
-    }).populate("problemId", "title slug");
+      isPublic: true,
+    };
+
+    if (statuses?.length) {
+      filter.status = { $in: statuses };
+    }
+
+    const solutions = await Solution.find(filter)
+      .populate("problemId", "title slug");
 
     const results = solutions.map(sol => formatSolution(sol, currentUserId));
     res.json(results);
