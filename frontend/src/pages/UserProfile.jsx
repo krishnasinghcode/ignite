@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { UserAPI } from "@/api/user";
 import { Button } from "@/components/ui/button";
+import Logout from "@/components/auth/Logout";
 
 export default function UserProfile() {
   const { userId } = useParams();
@@ -59,6 +60,8 @@ export default function UserProfile() {
       <Button asChild variant="outline">
         <Link to={`/users/${userInfo._id}/solutions`}>View Solutions</Link>
       </Button>
+      <br />
+      <Logout/>
     </div>
   );
 }

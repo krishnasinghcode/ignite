@@ -4,7 +4,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicRoute from "@/components/auth/PublicRoute";
 
-import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import Signup from "./pages/auth/Signup";
 import Login from "./pages/auth/Login";
@@ -34,6 +33,7 @@ export default function App() {
           
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:slug" element={<ProblemDetail />} />
+          <Route path="/" element={<Problems />} />
 
           {/* Public Routes */}
 
@@ -46,7 +46,6 @@ export default function App() {
           {/* Protected routes */}
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Dashboard />} />
             <Route path="/solutions/:solutionId" element={<SolutionDetail />} />
             <Route path="/solutions/edit/:solutionId" element={<EditSolution />} />
             <Route path="/solutions/my" element={<UserSolutions />} />

@@ -1,4 +1,5 @@
 import Problem from "../models/problemModel.js";
+import SavedProblem from "../models/savedProblemModel.js";
 import { generateUniqueSlug } from "../services/slug.js";
 import { validateMetadata } from "../services/metadataValidator.js";
 
@@ -54,12 +55,16 @@ export async function createProblem(req, res, next) {
 
 /**
  * Get all published problems with optional filters
+ * Supports ?saved=true for logged-in users
  */
 export async function getAllProblems(req, res, next) {
   try {
-    const { q, tags, category, problemType, difficulty } = req.query;
+    const { q, tags, category, problemType, difficulty, saved } = req.query;
 
-    const filter = { status: "PUBLISHED", deletedAt: null };
+    const filter = {
+      status: "PUBLISHED",
+      deletedAt: null,
+    };
 
     if (category) filter.category = category.toUpperCase();
     if (problemType) filter.problemType = problemType.toUpperCase();
@@ -67,10 +72,26 @@ export async function getAllProblems(req, res, next) {
     if (tags) filter.tags = { $in: tags.split(",").map(t => t.trim()) };
     if (q) filter.$text = { $search: q };
 
-    const problems = await Problem.find(filter)
+    let problems = await Problem.find(filter)
       .select("title slug summary category problemType difficulty tags createdAt")
       .sort({ createdAt: -1 })
       .limit(50);
+
+    if (req.user) {
+      const savedDocs = await SavedProblem.find({ userId: req.user._id }).select("problemId");
+      const savedIds = new Set(savedDocs.map(sp => sp.problemId.toString()));
+
+      // If saved filter is requested, only keep saved problems
+      if (saved === "true") {
+        problems = problems.filter(p => savedIds.has(p._id.toString()));
+      }
+
+      // Mark which problems are saved
+      problems = problems.map(p => ({
+        ...p.toObject(),
+        saved: savedIds.has(p._id.toString()),
+      }));
+    }
 
     res.json(problems);
   } catch (err) {

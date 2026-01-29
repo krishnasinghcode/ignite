@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useEffect } from "react";
 import API from "@/api/axios";
 
 /* ---------------- helpers ---------------- */
-
 const safeParse = (key) => {
   try {
     const raw = localStorage.getItem(key);
@@ -19,7 +18,6 @@ const getStoredToken = () => {
 };
 
 /* ---------------- context ---------------- */
-
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -28,10 +26,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   /* -------- refresh on initial load -------- */
-
   useEffect(() => {
     const refreshOnLoad = async () => {
       if (!accessToken) {
+        // Immediately mark loading false if no token
         setLoading(false);
         return;
       }
@@ -60,7 +58,6 @@ export const AuthProvider = ({ children }) => {
   }, [accessToken]);
 
   /* ---------------- actions ---------------- */
-
   const login = (token, userData) => {
     localStorage.setItem("accessToken", token);
     localStorage.setItem("user", JSON.stringify(userData));
@@ -76,8 +73,6 @@ export const AuthProvider = ({ children }) => {
     window.location.href = "/login";
   };
 
-  /* ---------------- provider ---------------- */
-
   return (
     <AuthContext.Provider
       value={{
@@ -85,7 +80,7 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         logout,
-        loading
+        loading,
       }}
     >
       {children}
@@ -95,8 +90,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 };
