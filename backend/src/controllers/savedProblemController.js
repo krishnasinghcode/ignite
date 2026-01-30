@@ -30,7 +30,7 @@ export async function toggleSaveProblem(req, res, next) {
     if (existingSave) {
       await SavedProblem.deleteOne({ _id: existingSave._id });
 
-      return res.json({
+      return res.status(200).json({
         saved: false,
         message: "Problem removed from saved items"
       });
@@ -54,7 +54,6 @@ export async function toggleSaveProblem(req, res, next) {
     next(err);
   }
 }
-
 
 /**
  * Get all saved problems for the logged-in user

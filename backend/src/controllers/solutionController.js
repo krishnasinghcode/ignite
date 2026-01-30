@@ -4,27 +4,41 @@ import Solution from "../models/solutionModel.js";
  * Helper to format solution object and add hasLiked attribute
  */
 const formatSolution = (solution, currentUserId) => {
+  if (!solution) return null;
+
   const solObj = solution.toObject();
+
+  const hasLiked = currentUserId
+    ? solObj.upvotes.some(id => id.toString() === currentUserId.toString())
+    : false;
+
+  delete solObj.upvotes;
+
   return {
     ...solObj,
-    hasLiked: currentUserId ? solution.upvotes.some(id => id.toString() === currentUserId) : false,
-    upvotes: undefined // Hide array of IDs for privacy/bandwidth
+    hasLiked
   };
 };
 
 /**
- * Get a single public solution by ID
+ * Standardize 'solutionId' to 'id' in your other functions too!
  */
 export async function getSolutionById(req, res, next) {
   try {
+    const { id } = req.params;
     const currentUserId = req.user?.id;
-    const solution = await Solution.findById(req.params.solutionId)
+
+    const solution = await Solution.findById(id)
       .populate("userId", "name")
       .populate("problemId", "title slug");
 
-    if (!solution) return res.status(404).json({ message: "Solution not found" });
+    if (!solution) {
+      return res.status(404).json({ message: "Solution not found" });
+    }
 
-    const isOwner = req.user && solution.userId._id.toString() === req.user.id;
+    const isOwner =
+      currentUserId && solution.userId._id.toString() === currentUserId;
+
     if (!solution.isPublic && !isOwner) {
       return res.status(403).json({ message: "Access denied to private solution" });
     }
@@ -65,7 +79,7 @@ export async function getSolutionsByProblem(req, res, next) {
 export async function getSolutionsByUser(req, res, next) {
   try {
     const currentUserId = req.user?.id;
-    const { status } = req.query; // e.g., "APPROVED,REJECTED"
+    const { status } = req.query;
     const statuses = status ? status.split(",") : undefined;
 
     const filter = {
@@ -89,21 +103,20 @@ export async function getSolutionsByUser(req, res, next) {
 
 /**
  * Submit a solution
- * - Requires content (Markdown)
  */
 export async function submitSolution(req, res, next) {
   try {
     const {
       problemId,
       repositoryUrl,
-      content, // Markdown content
+      content,
       techStack,
       liveDemoUrl,
       isPublic
     } = req.body;
 
     if (!problemId || !repositoryUrl || !content) {
-      return res.status(400).json({ message: "problemId, repositoryUrl, and content are required." });
+      return res.status(400).json({ message: "Fields missing" });
     }
 
     const solution = await Solution.create({
@@ -117,10 +130,10 @@ export async function submitSolution(req, res, next) {
       isPublic: isPublic !== undefined ? isPublic : true
     });
 
-    res.status(201).json(solution);
+    res.status(201).json(formatSolution(solution, req.user.id));
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(409).json({ message: "Solution already submitted for this problem" });
+      return res.status(400).json({ message: "Solution already submitted" });
     }
     next(err);
   }
@@ -133,17 +146,28 @@ export async function submitSolution(req, res, next) {
 export async function updateSolution(req, res, next) {
   try {
     const solution = await Solution.findById(req.params.solutionId);
-    if (!solution) return res.status(404).json({ message: "Solution not found" });
+    if (!solution) {
+      return res.status(404).json({ message: "Solution not found" });
+    }
 
     if (solution.userId.toString() !== req.user.id) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
     if (solution.status !== "SUBMITTED") {
-      return res.status(403).json({ message: "Solution cannot be edited after submission" });
+      return res
+        .status(403)
+        .json({ message: "Solution cannot be edited after submission" });
     }
 
-    const allowedFields = ["repositoryUrl", "liveDemoUrl", "content", "techStack", "isPublic"];
+    const allowedFields = [
+      "repositoryUrl",
+      "liveDemoUrl",
+      "content",
+      "techStack",
+      "isPublic"
+    ];
+
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
         solution[field] = req.body[field];
@@ -151,7 +175,7 @@ export async function updateSolution(req, res, next) {
     });
 
     await solution.save();
-    res.json(solution);
+    res.json(formatSolution(solution, req.user.id));
   } catch (err) {
     next(err);
   }
@@ -185,16 +209,25 @@ export async function toggleUpvote(req, res, next) {
     const userId = req.user.id;
 
     const solution = await Solution.findById(solutionId);
-    if (!solution) return res.status(404).json({ message: "Solution not found" });
-
-    const hasUpvoted = solution.upvotes.includes(userId);
-    if (hasUpvoted) {
-      await Solution.findByIdAndUpdate(solutionId, { $pull: { upvotes: userId }, $inc: { upvoteCount: -1 } });
-      return res.json({ message: "Upvote removed", upvoted: false });
-    } else {
-      await Solution.findByIdAndUpdate(solutionId, { $addToSet: { upvotes: userId }, $inc: { upvoteCount: 1 } });
-      return res.json({ message: "Solution upvoted", upvoted: true });
+    if (!solution) {
+      return res.status(404).json({ message: "Solution not found" });
     }
+
+    const hasUpvoted = solution.upvotes.some(
+      uid => uid.toString() === userId.toString()
+    );
+
+    const update = hasUpvoted
+      ? { $pull: { upvotes: userId }, $inc: { upvoteCount: -1 } }
+      : { $addToSet: { upvotes: userId }, $inc: { upvoteCount: 1 } };
+
+    const updatedSolution = await Solution.findByIdAndUpdate(
+      solutionId,
+      update,
+      { new: true }
+    );
+
+    res.status(200).json(formatSolution(updatedSolution, userId));
   } catch (err) {
     next(err);
   }

@@ -48,7 +48,7 @@ router.get(
   getSolutionsByUser
 );
 
-router.post(
+router.patch(
   "/:solutionId/upvote",
   authenticateUser,
   toggleUpvote);
