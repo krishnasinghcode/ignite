@@ -3,35 +3,31 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import { SavedProblemAPI } from "@/api/savedProblems";
 
 export default function ProblemCard({ problem, onClick, showEdit = false }) {
   const viewLink = `/problems/${problem.slug}`;
 
-  const [isSaved, setIsSaved] = useState(false);
+  // Initializing state directly from the problem object provided by the backend
+  const [isSaved, setIsSaved] = useState(problem.saved || false);
   const [saving, setSaving] = useState(false);
 
+  // Sync state if the problem prop updates (e.g. after a fresh list fetch)
   useEffect(() => {
-    if (!problem?._id) return;
-
-    SavedProblemAPI.isSaved(problem._id)
-      .then((res) => setIsSaved(res.saved))
-      .catch(() => {
-        // guest user → ignore
-      });
-  }, [problem._id]);
+    setIsSaved(problem.saved || false);
+  }, [problem.saved, problem._id]);
 
   const handleToggleSave = async (e) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevents navigating to problem detail when clicking bookmark
 
     try {
       setSaving(true);
       const res = await SavedProblemAPI.toggleSave(problem._id);
+      // The backend returns { saved: boolean }
       setIsSaved(res.saved);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to toggle save:", err);
     } finally {
       setSaving(false);
     }
@@ -66,12 +62,12 @@ export default function ProblemCard({ problem, onClick, showEdit = false }) {
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-          {/* Bookmark */}
           <Button
             variant="ghost"
             size="icon"
             disabled={saving}
             onClick={handleToggleSave}
+            title={isSaved ? "Unsave" : "Save"}
           >
             {isSaved ? (
               <BookmarkCheck className="h-4 w-4 text-primary" />

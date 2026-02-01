@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProblemAPI } from "@/api/problems";
-import { MetadataAPI } from "@/api/metadata"; // Using your provided API utility
+import { MetadataAPI } from "@/api/metadata";
 import { useDebounce } from "@/hooks/useDebounce";
 import ProblemCard from "@/components/problems/ProblemCard";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { useAuth } from "@/context/authContext";
 
 export default function Problems() {
   const [problems, setProblems] = useState([]);
-  const [categories, setCategories] = useState([]); // Will store dynamic "CATEGORY" metadata
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [params, setParams] = useState({});
   const navigate = useNavigate();
@@ -26,11 +26,10 @@ export default function Problems() {
 
   const debouncedSearch = useDebounce(params.q, 400);
 
-  // 1. Fetch Dynamic Categories from Metadata API
+  // 1. Fetch Categories once on mount
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        // Using your getByType method to fetch only CATEGORY entries
         const data = await MetadataAPI.getByType("CATEGORY");
         setCategories(data);
       } catch (err) {
@@ -47,8 +46,9 @@ export default function Problems() {
       try {
         const res = await ProblemAPI.getAllProblems({
           q: debouncedSearch,
-          category: params.category, // Aligns with your ProblemSchema.category
+          category: params.category,
           difficulty: params.difficulty,
+          // Only include saved param if user is logged in
           ...(user && params.saved ? { saved: params.saved } : {}),
         });
         setProblems(res);
@@ -60,13 +60,18 @@ export default function Problems() {
     };
 
     fetchProblems();
-  }, [debouncedSearch, params.category, params.difficulty, params.saved, user]);
+    // STABLE DEPENDENCIES: Using user?._id prevents loops from auth object re-references
+  }, [debouncedSearch, params.category, params.difficulty, params.saved, user?._id]);
 
   const toggleSaved = () => {
     setParams((prev) => ({
       ...prev,
       saved: prev.saved === "true" ? undefined : "true",
     }));
+  };
+
+  const resetFilters = () => {
+    setParams({});
   };
 
   return (
@@ -96,7 +101,6 @@ export default function Problems() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          {/* DYNAMIC CATEGORY FILTER */}
           <Select
             value={params.category || "all"}
             onValueChange={(v) =>
@@ -119,7 +123,6 @@ export default function Problems() {
             </SelectContent>
           </Select>
 
-          {/* DIFFICULTY FILTER */}
           <Select
             value={params.difficulty || "all"}
             onValueChange={(v) =>
@@ -150,7 +153,7 @@ export default function Problems() {
             </Button>
           )}
 
-          <Button variant="outline" size="icon" onClick={() => setParams({})} title="Reset Filters">
+          <Button variant="outline" size="icon" onClick={resetFilters} title="Reset Filters">
             <RotateCcw className="h-4 w-4" />
           </Button>
         </div>
@@ -168,7 +171,7 @@ export default function Problems() {
           <div className="flex flex-col items-center justify-center py-20 border border-dashed rounded-3xl bg-muted/5">
             <FilterX className="h-10 w-10 text-muted-foreground/30 mb-4" />
             <p className="text-muted-foreground font-medium">No results found for your filters.</p>
-            <Button variant="link" onClick={() => setParams({})}>Clear all filters</Button>
+            <Button variant="link" onClick={resetFilters}>Clear all filters</Button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

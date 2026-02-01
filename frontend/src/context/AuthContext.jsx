@@ -25,11 +25,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => safeParse("user"));
   const [loading, setLoading] = useState(true);
 
-  /* -------- refresh on initial load -------- */
+  /* -------- refresh on initial load ONLY -------- */
   useEffect(() => {
     const refreshOnLoad = async () => {
-      if (!accessToken) {
-        // Immediately mark loading false if no token
+      // Check for token existence before trying to refresh
+      const token = getStoredToken();
+      if (!token) {
         setLoading(false);
         return;
       }
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(newToken);
         setUser(userData);
       } catch (err) {
-        console.error("Token refresh failed", err);
+        console.error("Session restoration failed:", err);
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
         setAccessToken(null);
@@ -55,9 +56,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     refreshOnLoad();
-  }, [accessToken]);
+    // Empty array ensures this never triggers a loop
+  }, []); 
 
-  /* ---------------- actions ---------------- */
   const login = (token, userData) => {
     localStorage.setItem("accessToken", token);
     localStorage.setItem("user", JSON.stringify(userData));
@@ -75,13 +76,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{
-        accessToken,
-        user,
-        login,
-        logout,
-        loading,
-      }}
+      value={{ accessToken, user, login, logout, loading }}
     >
       {children}
     </AuthContext.Provider>

@@ -4,20 +4,18 @@ dotenv.config();
 import app from "./app.js";
 import connectDB from "./db.js";
 
-const MONGODB_URI = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-async function startServer() {
-  try {
-    await connectDB(MONGODB_URI);
+// Connect DB once
+await connectDB(MONGODB_URI);
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server listening on port ${PORT}`);
-    });
-  } catch (err) {
-    console.error("Error starting server:", err.message);
-    process.exit(1);
-  }
+// Only start HTTP server for local dev
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server listening on port ${PORT}`);
+  });
 }
 
-startServer();
+// Export app for serverless platforms
+export default app;
