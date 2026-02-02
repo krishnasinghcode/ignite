@@ -76,22 +76,12 @@ export default function ProblemDetail() {
 
   const handleUpvote = async (solutionId) => {
     try {
-      const res = await SolutionAPI.toggleUpvote(solutionId);
+      const updatedSolution = await SolutionAPI.toggleUpvote(solutionId);
       setSolutions((prev) =>
-        prev.map((s) =>
-          s._id === solutionId
-            ? {
-                ...s,
-                hasLiked: res.upvoted,
-                upvoteCount: res.upvoted
-                  ? s.upvoteCount + 1
-                  : s.upvoteCount - 1
-              }
-            : s
-        )
+        prev.map((s) => (s._id === solutionId ? updatedSolution : s))
       );
     } catch (err) {
-      console.error(err);
+      console.error("Upvote failed", err);
     }
   };
 

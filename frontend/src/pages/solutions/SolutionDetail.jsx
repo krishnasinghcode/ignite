@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Github, ExternalLink, User, Calendar } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { cn } from "@/lib/utils";
 
 export default function SolutionDetail() {
   const { solutionId } = useParams();
   const navigate = useNavigate();
+  
   const [solution, setSolution] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Local states for immediate UI feedback
   const [upvoted, setUpvoted] = useState(false);
   const [count, setCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
@@ -23,10 +26,11 @@ export default function SolutionDetail() {
         setLoading(true);
         const res = await SolutionAPI.getSolutionById(solutionId);
         setSolution(res);
+        // Sync local state with the fetched data
         setUpvoted(res.hasLiked); 
         setCount(res.upvoteCount || 0);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching solution:", err);
       } finally {
         setLoading(false);
       }
@@ -36,13 +40,20 @@ export default function SolutionDetail() {
 
   const handleUpvote = async () => {
     if (isLiking) return;
+    
     setIsLiking(true);
     try {
-      const res = await SolutionAPI.toggleUpvote(solutionId);
-      setUpvoted(res.upvoted);
-      setCount(prev => res.upvoted ? prev + 1 : prev - 1);
+      // The backend returns the full updated solution object via formatSolution
+      const updatedSol = await SolutionAPI.toggleUpvote(solutionId);
+      
+      // Directly use the values from the backend response
+      setUpvoted(updatedSol.hasLiked);
+      setCount(updatedSol.upvoteCount);
+      
+      // Update the main object so other UI elements (like a footer) stay in sync
+      setSolution(updatedSol);
     } catch (err) {
-      console.error(err);
+      console.error("Upvote failed:", err);
     } finally {
       setIsLiking(false);
     }
@@ -54,24 +65,38 @@ export default function SolutionDetail() {
     </div>
   );
   
-  if (!solution) return <p className="text-center py-20 text-muted-foreground">Solution not found</p>;
+  if (!solution) return (
+    <div className="text-center py-20 space-y-4">
+      <p className="text-muted-foreground">Solution not found</p>
+      <Button onClick={() => navigate(-1)}>Go Back</Button>
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8 animate-in fade-in duration-500">
       {/* Top Navigation */}
       <div className="flex justify-between items-center">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground -ml-2 hover:bg-transparent hover:text-primary transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Problem
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate(-1)} 
+          className="text-muted-foreground -ml-2 hover:bg-transparent hover:text-primary transition-colors"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <div className="flex gap-2">
           {solution.repositoryUrl && (
-            <Button variant="ghost" size="icon" asChild title="View Code">
-              <a href={solution.repositoryUrl} target="_blank" rel="noreferrer"><Github className="h-5 w-5" /></a>
+            <Button variant="outline" size="icon" asChild title="View Code" className="rounded-full">
+              <a href={solution.repositoryUrl} target="_blank" rel="noreferrer">
+                <Github className="h-5 w-5" />
+              </a>
             </Button>
           )}
           {solution.liveDemoUrl && (
-            <Button variant="ghost" size="icon" asChild title="Live Demo">
-              <a href={solution.liveDemoUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-5 w-5" /></a>
+            <Button variant="outline" size="icon" asChild title="Live Demo" className="rounded-full">
+              <a href={solution.liveDemoUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-5 w-5" />
+              </a>
             </Button>
           )}
         </div>
@@ -83,63 +108,72 @@ export default function SolutionDetail() {
           <Badge className="bg-primary/10 text-primary border-none hover:bg-primary/15 px-3">
             {solution.problemId?.category || "Solution"}
           </Badge>
-          {/* PROBLEM TITLE - NOW BIGGER */}
           <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            {solution.problemId?.title}
+            {solution.problemId?.title || "Problem Title"}
           </h1>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 border-y border-border/50">
           <div className="flex items-center gap-6">
-            {/* AUTHOR - SMALLER & SUBTLE */}
+            {/* Author Info */}
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                <User className="h-4 w-4 text-muted-foreground" />
+              <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center border">
+                <User className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold leading-none">Author</p>
-                <p className="text-sm font-medium">{solution.userId?.name}</p>
+                <p className="text-sm font-semibold">{solution.userId?.name || "Anonymous"}</p>
               </div>
             </div>
 
             <div className="h-8 w-[1px] bg-border hidden md:block" />
 
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {new Date(solution.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            {/* Date Info */}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <p className="text-sm">
+                {new Date(solution.createdAt).toLocaleDateString(undefined, { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
               </p>
             </div>
           </div>
 
-          {/* UPVOTE - SMALLER & SLEEKER */}
+          {/* Upvote Button */}
           <Button 
             variant={upvoted ? "default" : "outline"} 
             size="sm"
-            className={`rounded-full px-4 h-9 gap-2 transition-all duration-300 ${upvoted ? 'bg-rose-500 hover:bg-rose-600 border-rose-500' : 'hover:border-rose-500 hover:text-rose-500'}`}
+            className={cn(
+              "rounded-full px-6 h-10 gap-2 transition-all duration-300 active:scale-95",
+              upvoted 
+                ? 'bg-rose-500 hover:bg-rose-600 border-rose-500 text-white shadow-md shadow-rose-200' 
+                : 'hover:border-rose-500 hover:text-rose-500'
+            )}
             onClick={handleUpvote}
             disabled={isLiking}
           >
-            <Heart className={`h-4 w-4 ${upvoted ? 'fill-current' : ''}`} />
-            <span className="font-bold text-xs">{count}</span>
+            <Heart className={cn("h-4 w-4 transition-transform", upvoted && "fill-current scale-110")} />
+            <span className="font-bold text-sm">{count}</span>
           </Button>
         </div>
       </div>
 
-      {/* Tech Stack */}
+      {/* Tech Stack Section */}
       <div className="flex flex-wrap gap-2">
         {solution.techStack?.map(tech => (
-          <Badge key={tech} variant="secondary" className="bg-secondary/50 text-secondary-foreground border-none">
+          <Badge key={tech} variant="secondary" className="bg-secondary/50 text-secondary-foreground border-none px-3 py-1">
             {tech}
           </Badge>
         ))}
       </div>
 
-      {/* Markdown Content */}
+      {/* Solution Content */}
       <div className="pt-4">
         <article className="prose prose-slate dark:prose-invert max-w-none 
           prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed
-          prose-strong:text-foreground prose-code:text-primary">
+          prose-strong:text-foreground prose-code:text-primary prose-pre:bg-muted/50">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {solution.content}
           </ReactMarkdown>

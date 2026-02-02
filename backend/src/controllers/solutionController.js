@@ -25,10 +25,10 @@ const formatSolution = (solution, currentUserId) => {
  */
 export async function getSolutionById(req, res, next) {
   try {
-    const { id } = req.params;
+    const { solutionId } = req.params;
     const currentUserId = req.user?.id;
 
-    const solution = await Solution.findById(id)
+    const solution = await Solution.findById(solutionId)
       .populate("userId", "name")
       .populate("problemId", "title slug");
 
@@ -92,6 +92,7 @@ export async function getSolutionsByUser(req, res, next) {
     }
 
     const solutions = await Solution.find(filter)
+      .populate("userId", "name") // <--- ADD THIS LINE
       .populate("problemId", "title slug");
 
     const results = solutions.map(sol => formatSolution(sol, currentUserId));
@@ -201,7 +202,8 @@ export async function deleteSolution(req, res, next) {
 }
 
 /**
- * Toggle upvote
+ * UPDATED FUNCTION: toggleUpvote
+ * Ensures returned data matches the initial fetch population
  */
 export async function toggleUpvote(req, res, next) {
   try {
@@ -209,23 +211,22 @@ export async function toggleUpvote(req, res, next) {
     const userId = req.user.id;
 
     const solution = await Solution.findById(solutionId);
-    if (!solution) {
-      return res.status(404).json({ message: "Solution not found" });
-    }
+    if (!solution) return res.status(404).json({ message: "Solution not found" });
 
-    const hasUpvoted = solution.upvotes.some(
-      uid => uid.toString() === userId.toString()
-    );
+    const hasUpvoted = solution.upvotes.some(uid => uid.toString() === userId.toString());
 
     const update = hasUpvoted
-      ? { $pull: { upvotes: userId }, $inc: { upvoteCount: -1 } }
-      : { $addToSet: { upvotes: userId }, $inc: { upvoteCount: 1 } };
+      ? { $pull: { upvotes: userId } }
+      : { $addToSet: { upvotes: userId } };
 
-    const updatedSolution = await Solution.findByIdAndUpdate(
-      solutionId,
-      update,
-      { new: true }
-    );
+    // Perform update and populate immediately
+    let updatedSolution = await Solution.findByIdAndUpdate(solutionId, update, { new: true })
+      .populate("userId", "name")
+      .populate("problemId", "title slug");
+
+    // Sync count
+    updatedSolution.upvoteCount = updatedSolution.upvotes.length;
+    await updatedSolution.save();
 
     res.status(200).json(formatSolution(updatedSolution, userId));
   } catch (err) {

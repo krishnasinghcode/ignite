@@ -17,6 +17,7 @@ export const SolutionAPI = {
   // Get a specific solution by ID (public or owned by user)
   getSolutionById: async (solutionId) => {
     const res = await api.get(`/solutions/${solutionId}`);
+    console.log(res.data);
     return res.data;
   },
 
@@ -40,7 +41,7 @@ export const SolutionAPI = {
 
   // Upvote an solution
   toggleUpvote: async (solutionId) => {
-    const res = await api.post(`/solutions/${solutionId}/upvote`);
+    const res = await api.patch(`/solutions/${solutionId}/upvote`);
     return res.data;
   },
 };
